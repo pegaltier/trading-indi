@@ -22,8 +22,8 @@ describe("Variance", () => {
       values.push(x);
       const result = variance.onData(x);
       const expected = naiveStats(values, 0);
-      expect(result.m).toBeCloseTo(expected.mean);
-      expect(result.var).toBeCloseTo(expected.variance);
+      expect(result.mean).toBeCloseTo(expected.mean);
+      expect(result.variance).toBeCloseTo(expected.variance);
     }
   });
 
@@ -41,8 +41,8 @@ describe("Variance", () => {
       }
       const result = variance.onData(x);
       const expected = naiveStats(values, 0);
-      expect(result.m).toBeCloseTo(expected.mean);
-      expect(result.var).toBeCloseTo(expected.variance);
+      expect(result.mean).toBeCloseTo(expected.mean);
+      expect(result.variance).toBeCloseTo(expected.variance);
     }
   });
 
@@ -60,8 +60,8 @@ describe("Variance", () => {
       }
       const result = variance.onData(x);
       const expected = naiveStats(values, 1);
-      expect(result.m).toBeCloseTo(expected.mean);
-      expect(result.var).toBeCloseTo(expected.variance);
+      expect(result.mean).toBeCloseTo(expected.mean);
+      expect(result.variance).toBeCloseTo(expected.variance);
     }
   });
 
@@ -71,8 +71,8 @@ describe("Variance", () => {
 
     for (const x of testData) {
       const result = variance.onData(x);
-      expect(result.m).toBe(100);
-      expect(result.var).toBe(0);
+      expect(result.mean).toBe(100);
+      expect(result.variance).toBe(0);
     }
   });
 
@@ -85,8 +85,8 @@ describe("Variance", () => {
       values.push(x);
       const result = variance.onData(x);
       const expected = naiveStats(values, 0);
-      expect(result.m).toBeCloseTo(expected.mean);
-      expect(result.var).toBeCloseTo(expected.variance);
+      expect(result.mean).toBeCloseTo(expected.mean);
+      expect(result.variance).toBeCloseTo(expected.variance);
     }
   });
 
@@ -103,8 +103,8 @@ describe("Variance", () => {
       }
       const result = variance.onData(x);
       const expected = naiveStats(values, 0);
-      expect(result.m).toBeCloseTo(expected.mean);
-      expect(result.var).toBeCloseTo(expected.variance);
+      expect(result.mean).toBeCloseTo(expected.mean);
+      expect(result.variance).toBeCloseTo(expected.variance);
     }
   });
 });

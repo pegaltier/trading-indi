@@ -1,5 +1,5 @@
 import type { PeriodOptions, PeriodWith } from "../types/PeriodOptions.js";
-import { exp_factor, smooth, smooth_roll } from "../utils/math.js";
+import { exp_factor, Kahan, smooth, smooth_roll } from "../utils/math.js";
 import { CircularBuffer, Deque } from "./Containers.js";
 
 /**
@@ -97,6 +97,7 @@ export function useSMA(opts: PeriodWith<"period">): (x: number) => number {
  */
 export class Variance {
   readonly buffer: CircularBuffer<number>;
+  readonly kahan: Kahan;
   private m: number = 0;
   private m2: number = 0;
   private ddof: number;
@@ -109,6 +110,7 @@ export class Variance {
       throw new Error("Period should be larger than DDoF.");
     }
     this.buffer = new CircularBuffer<number>(opts.period);
+    this.kahan = new Kahan();
     this.weight = 1.0 / opts.period;
     this.varWeight = 1.0 / (opts.period - this.ddof);
   }
@@ -123,7 +125,7 @@ export class Variance {
       this.buffer.push(x);
       const delta = x - this.m;
       this.m += delta / this.buffer.size();
-      this.m2 += (x - this.m) * delta;
+      this.m2 = this.kahan.add((x - this.m) * delta);
       if (this.buffer.size() <= this.ddof) {
         return { mean: this.m, variance: 0 };
       } else {
@@ -138,7 +140,7 @@ export class Variance {
       const d0 = x0 - this.m;
       const dx = x - x0;
       this.m += this.weight * dx;
-      this.m2 += dx * (d - this.weight * dx + d0);
+      this.m2 = this.kahan.add(dx * (d + d0) - this.weight * dx * dx);
       this.buffer.push(x);
       return { mean: this.m, variance: this.m2 * this.varWeight };
     }
