@@ -1,4 +1,4 @@
-import type { BarData, BarWith } from "../types/BarData.js";
+import type { BarWith } from "../types/BarData.js";
 import type { PeriodOptions } from "../types/PeriodOptions.js";
 import { EMA, MinMax, SMA } from "../classes/Foundation.js";
 import { CircularBuffer } from "../classes/Containers.js";
