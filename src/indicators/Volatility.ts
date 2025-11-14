@@ -48,7 +48,7 @@ export function useVOLATILITY(
   opts: PeriodOptions & { annualizedDays?: number }
 ): (bar: BarWith<"close">) => number {
   const instance = new VOLATILITY(opts);
-  return (bar: BarData) => instance.onData(bar);
+  return (bar) => instance.onData(bar);
 }
 
 /**
@@ -71,7 +71,7 @@ export class CVI {
    * @param bar Bar data with high and low
    * @returns Current CVI value
    */
-  onData(bar: BarWith<"high" | "low" | "close">): number {
+  onData(bar: BarWith<"high" | "low">): number {
     const emaVal = this.ema.onData(bar.high - bar.low);
     this.buffer.push(emaVal);
 
@@ -91,7 +91,7 @@ export class CVI {
  */
 export function useCVI(
   opts: PeriodOptions
-): (bar: BarWith<"high" | "low" | "close">) => number {
+): (bar: BarWith<"high" | "low">) => number {
   const instance = new CVI(opts);
   return (bar) => instance.onData(bar);
 }
@@ -118,7 +118,7 @@ export class MASS {
    * @param bar Bar data with high and low
    * @returns Current Mass Index value
    */
-  onData(bar: BarWith<"high" | "low" | "close">): number {
+  onData(bar: BarWith<"high" | "low">): number {
     const range = bar.high - bar.low;
     const ema1Val = this.ema1.onData(range);
     const ema2Val = this.ema2.onData(ema1Val);
@@ -144,7 +144,7 @@ export class MASS {
  */
 export function useMASS(
   opts: PeriodOptions
-): (bar: BarWith<"high" | "low" | "close">) => number {
+): (bar: BarWith<"high" | "low">) => number {
   const instance = new MASS(opts);
   return (bar) => instance.onData(bar);
 }

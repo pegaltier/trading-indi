@@ -16,7 +16,7 @@ export class AO {
    * @param bar Bar with high and low prices
    * @returns Current AO value
    */
-  onData(bar: BarWith<"high" | "low" | "close">): number {
+  onData(bar: BarWith<"high" | "low">): number {
     const midpoint = (bar.high + bar.low) / 2;
     return this.smaShort.onData(midpoint) - this.smaLong.onData(midpoint);
   }
@@ -26,7 +26,7 @@ export class AO {
  * Creates AO closure for functional usage.
  * @returns Function that processes bar data and returns AO
  */
-export function useAO(): (bar: BarWith<"high" | "low" | "close">) => number {
+export function useAO(): (bar: BarWith<"high" | "low">) => number {
   const instance = new AO();
   return (bar) => instance.onData(bar);
 }
@@ -133,7 +133,7 @@ export class Fisher {
    * @param bar Bar with high and low prices
    * @returns Current Fisher Transform value
    */
-  onData(bar: BarWith<"high" | "low" | "close">): number {
+  onData(bar: BarWith<"high" | "low">): number {
     const hl = (bar.high + bar.low) / 2;
     const { min, max } = this.minmax.onData(hl);
 
@@ -160,7 +160,7 @@ export class Fisher {
  */
 export function useFisher(
   opts: PeriodOptions
-): (bar: BarWith<"high" | "low" | "close">) => number {
+): (bar: BarWith<"high" | "low">) => number {
   const instance = new Fisher(opts);
   return (bar) => instance.onData(bar);
 }
@@ -343,7 +343,9 @@ export class TRIX {
  * @param opts Period configuration
  * @returns Function that processes bar data and returns TRIX
  */
-export function useTRIX(opts: PeriodOptions): (bar: BarWith<"close">) => number {
+export function useTRIX(
+  opts: PeriodOptions
+): (bar: BarWith<"close">) => number {
   const instance = new TRIX(opts);
   return (bar) => instance.onData(bar);
 }

@@ -71,9 +71,9 @@ export class AROON {
  * @param opts Period configuration
  * @returns Function that processes bar data and returns {up, down}
  */
-export function useAROON(
-  opts: PeriodOptions
-): (bar: BarWith<"high" | "low">) => {
+export function useAROON(opts: PeriodOptions): (
+  bar: BarWith<"high" | "low">
+) => {
   up: number;
   down: number;
 } {
@@ -110,7 +110,7 @@ export class AROONOSC {
  */
 export function useAROONOSC(
   opts: PeriodOptions
-): (bar: BarWith<"high" | "low" | "close">) => number {
+): (bar: BarWith<"high" | "low">) => number {
   const instance = new AROONOSC(opts);
   return (bar) => instance.onData(bar);
 }
@@ -215,11 +215,9 @@ export class VHF {
  * @param opts Period configuration
  * @returns Function that processes bar data and returns VHF
  */
-export function useVHF(
-  opts: PeriodOptions
-): (bar: BarWith<"close">) => number {
+export function useVHF(opts: PeriodOptions): (bar: BarWith<"close">) => number {
   const instance = new VHF(opts);
-  return (close) => instance.onData(close);
+  return (bar) => instance.onData(bar);
 }
 
 /**

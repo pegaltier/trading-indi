@@ -437,5 +437,5 @@ export function useVOSC(
   opts: Required<Pick<PeriodOptions, "period_short" | "period_long">>
 ): (bar: BarWith<"volume">) => number {
   const instance = new VOSC(opts);
-  return (volume) => instance.onData(volume);
+  return (bar) => instance.onData(bar);
 }
