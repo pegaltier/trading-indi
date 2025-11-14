@@ -1,4 +1,4 @@
-import type { PeriodOptions } from "../types/PeriodOptions.js";
+import type { PeriodOptions, PeriodWith } from "../types/PeriodOptions.js";
 import { exp_factor, smooth, smooth_roll } from "../utils/math.js";
 import { CircularBuffer, Deque } from "./Containers.js";
 
@@ -41,7 +41,9 @@ export class EMA {
  * @param opts Period configuration
  * @returns Function that processes data and returns EMA
  */
-export function useEMA(opts: PeriodOptions): (x: number) => number {
+export function useEMA(
+  opts: PeriodOptions & { alpha?: number }
+): (x: number) => number {
   const instance = new EMA(opts);
   return (x: number) => instance.onData(x);
 }
@@ -55,10 +57,7 @@ export class SMA {
   private sma: number = 0;
   private weight: number;
 
-  constructor(opts: PeriodOptions) {
-    if (opts.period === undefined) {
-      throw new Error("SMA requires period");
-    }
+  constructor(opts: PeriodWith<"period">) {
     this.buffer = new CircularBuffer<number>(opts.period);
     this.weight = 1.0 / opts.period;
   }
@@ -86,7 +85,7 @@ export class SMA {
  * @param opts Period configuration
  * @returns Function that processes data and returns SMA
  */
-export function useSMA(opts: PeriodOptions): (x: number) => number {
+export function useSMA(opts: PeriodWith<"period">): (x: number) => number {
   const instance = new SMA(opts);
   return (x: number) => instance.onData(x);
 }
@@ -104,10 +103,7 @@ export class Variance {
   private weight: number;
   private varWeight: number;
 
-  constructor(opts: PeriodOptions & { ddof?: number }) {
-    if (opts.period === undefined) {
-      throw new Error("Variance requires period");
-    }
+  constructor(opts: PeriodWith<"period"> & { ddof?: number }) {
     this.ddof = opts.ddof ?? 0;
     if (opts.period <= this.ddof) {
       throw new Error("Period should be larger than DDoF.");
@@ -152,7 +148,7 @@ export class Variance {
  * @returns Function that processes data and returns {m, var}
  */
 export function useVariance(
-  opts: PeriodOptions & { ddof?: number }
+  opts: PeriodWith<"period"> & { ddof?: number }
 ): (x: number) => { m: number; var: number } {
   const instance = new Variance(opts);
   return (x: number) => instance.onData(x);
@@ -167,10 +163,7 @@ export class MinMax {
   private minDeque: Deque<number>;
   private maxDeque: Deque<number>;
 
-  constructor(opts: PeriodOptions) {
-    if (opts.period === undefined) {
-      throw new Error("MinMax requires period");
-    }
+  constructor(opts: PeriodWith<"period">) {
     this.buffer = new CircularBuffer<number>(opts.period);
     this.minDeque = new Deque(opts.period);
     this.maxDeque = new Deque(opts.period);
@@ -217,7 +210,7 @@ export class MinMax {
  * @returns Function that processes data and returns {min, max}
  */
 export function useMinMax(
-  opts: PeriodOptions
+  opts: PeriodWith<"period">
 ): (x: number) => { min: number; max: number } {
   const instance = new MinMax(opts);
   return (x: number) => instance.onData(x);

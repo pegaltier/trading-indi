@@ -1,6 +1,6 @@
 import { Variance, EMA } from "../classes/Foundation.js";
-import type { BarData, BarWith } from "../types/BarData.js";
-import type { PeriodOptions } from "../types/PeriodOptions.js";
+import type { BarWith } from "../types/BarData.js";
+import type { PeriodWith } from "../types/PeriodOptions.js";
 import { CircularBuffer } from "../classes/Containers.js";
 import { wilders_factor } from "../utils/math.js";
 
@@ -13,10 +13,7 @@ export class VOLATILITY {
   private variance: Variance;
   private annualizedDays: number;
 
-  constructor(opts: PeriodOptions & { annualizedDays?: number }) {
-    if (opts.period === undefined) {
-      throw new Error("VOLATILITY requires period");
-    }
+  constructor(opts: PeriodWith<"period"> & { annualizedDays?: number }) {
     this.variance = new Variance({ period: opts.period, ddof: 1 });
     this.annualizedDays = opts.annualizedDays ?? 250;
   }
@@ -45,7 +42,7 @@ export class VOLATILITY {
  * @returns Function that processes data and returns volatility
  */
 export function useVOLATILITY(
-  opts: PeriodOptions & { annualizedDays?: number }
+  opts: PeriodWith<"period"> & { annualizedDays?: number }
 ): (bar: BarWith<"close">) => number {
   const instance = new VOLATILITY(opts);
   return (bar) => instance.onData(bar);
@@ -58,7 +55,7 @@ export class CVI {
   private ema: EMA;
   private buffer: CircularBuffer<number>;
 
-  constructor(opts: PeriodOptions) {
+  constructor(opts: PeriodWith<"period">) {
     if (opts.period === undefined) {
       throw new Error("CVI requires period");
     }
@@ -90,7 +87,7 @@ export class CVI {
  * @returns Function that processes bar data and returns CVI
  */
 export function useCVI(
-  opts: PeriodOptions
+  opts: PeriodWith<"period">
 ): (bar: BarWith<"high" | "low">) => number {
   const instance = new CVI(opts);
   return (bar) => instance.onData(bar);
@@ -104,7 +101,7 @@ export class MASS {
   private ema2: EMA;
   private buffer: CircularBuffer<number>;
 
-  constructor(opts: PeriodOptions) {
+  constructor(opts: PeriodWith<"period">) {
     if (opts.period === undefined) {
       throw new Error("MASS requires period");
     }
@@ -143,7 +140,7 @@ export class MASS {
  * @returns Function that processes bar data and returns Mass Index
  */
 export function useMASS(
-  opts: PeriodOptions
+  opts: PeriodWith<"period">
 ): (bar: BarWith<"high" | "low">) => number {
   const instance = new MASS(opts);
   return (bar) => instance.onData(bar);
@@ -191,10 +188,7 @@ export class ATR {
   private tr: TR;
   private ema: EMA;
 
-  constructor(opts: PeriodOptions) {
-    if (opts.period === undefined) {
-      throw new Error("ATR requires period");
-    }
+  constructor(opts: PeriodWith<"period">) {
     this.tr = new TR();
     this.ema = new EMA({ alpha: wilders_factor(opts.period) });
   }
@@ -216,7 +210,7 @@ export class ATR {
  * @returns Function that processes bar data and returns ATR
  */
 export function useATR(
-  opts: PeriodOptions
+  opts: PeriodWith<"period">
 ): (bar: BarWith<"high" | "low" | "close">) => number {
   const instance = new ATR(opts);
   return (bar) => instance.onData(bar);
@@ -228,7 +222,7 @@ export function useATR(
 export class NATR {
   private atr: ATR;
 
-  constructor(opts: PeriodOptions) {
+  constructor(opts: PeriodWith<"period">) {
     this.atr = new ATR(opts);
   }
 
@@ -249,7 +243,7 @@ export class NATR {
  * @returns Function that processes bar data and returns NATR
  */
 export function useNATR(
-  opts: PeriodOptions
+  opts: PeriodWith<"period">
 ): (bar: BarWith<"high" | "low" | "close">) => number {
   const instance = new NATR(opts);
   return (bar) => instance.onData(bar);

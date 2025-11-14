@@ -1,5 +1,5 @@
 import type { BarWith } from "../types/BarData.js";
-import type { PeriodOptions } from "../types/PeriodOptions.js";
+import type { PeriodWith } from "../types/PeriodOptions.js";
 import { CircularBuffer } from "../classes/Containers.js";
 import { EMA } from "../classes/Foundation.js";
 
@@ -47,9 +47,7 @@ export class ADOSC {
   private emaShort: EMA;
   private emaLong: EMA;
 
-  constructor(
-    opts: Required<Pick<PeriodOptions, "period_short" | "period_long">>
-  ) {
+  constructor(opts: PeriodWith<"period_short" | "period_long">) {
     this.emaShort = new EMA({ period: opts.period_short });
     this.emaLong = new EMA({ period: opts.period_long });
   }
@@ -71,7 +69,7 @@ export class ADOSC {
  * @returns Function that processes bar data and returns ADOSC
  */
 export function useADOSC(
-  opts: Required<Pick<PeriodOptions, "period_short" | "period_long">>
+  opts: PeriodWith<"period_short" | "period_long">
 ): (bar: BarWith<"high" | "low" | "close" | "volume">) => number {
   const instance = new ADOSC(opts);
   return (bar) => instance.onData(bar);
@@ -88,12 +86,9 @@ export class KVO {
   private trend: number = 1;
   private cm: number = 0;
 
-  constructor(opts: PeriodOptions) {
-    const shortPeriod = opts.period_short ?? 34;
-    const longPeriod = opts.period_long ?? 55;
-
-    this.shortEMA = new EMA({ period: shortPeriod });
-    this.longEMA = new EMA({ period: longPeriod });
+  constructor(opts: PeriodWith<"period_short" | "period_long">) {
+    this.shortEMA = new EMA({ period: opts.period_short });
+    this.longEMA = new EMA({ period: opts.period_long });
   }
 
   /**
@@ -141,7 +136,7 @@ export class KVO {
  * @returns Function that processes bar data and returns KVO
  */
 export function useKVO(
-  opts: PeriodOptions = {}
+  opts: PeriodWith<"period_short" | "period_long">
 ): (bar: BarWith<"high" | "low" | "close" | "volume">) => number {
   const instance = new KVO(opts);
   return (bar) => instance.onData(bar);
@@ -276,10 +271,7 @@ export class MFI {
   private buffer: CircularBuffer<{ mf: number; positive: boolean }>;
   private prevTypical?: number;
 
-  constructor(opts: PeriodOptions) {
-    if (opts.period === undefined) {
-      throw new Error("MFI requires period");
-    }
+  constructor(opts: PeriodWith<"period">) {
     this.buffer = new CircularBuffer(opts.period);
   }
 
@@ -331,7 +323,7 @@ export class MFI {
  * @returns Function that processes bar data and returns MFI
  */
 export function useMFI(
-  opts: PeriodOptions
+  opts: PeriodWith<"period">
 ): (bar: BarWith<"high" | "low" | "close" | "volume">) => number {
   const instance = new MFI(opts);
   return (bar) => instance.onData(bar);
@@ -407,9 +399,7 @@ export class VOSC {
   private emaShort: EMA;
   private emaLong: EMA;
 
-  constructor(
-    opts: Required<Pick<PeriodOptions, "period_short" | "period_long">>
-  ) {
+  constructor(opts: PeriodWith<"period_short" | "period_long">) {
     this.emaShort = new EMA({ period: opts.period_short });
     this.emaLong = new EMA({ period: opts.period_long });
   }
@@ -434,7 +424,7 @@ export class VOSC {
  * @returns Function that processes volume and returns VOSC
  */
 export function useVOSC(
-  opts: Required<Pick<PeriodOptions, "period_short" | "period_long">>
+  opts: PeriodWith<"period_short" | "period_long">
 ): (bar: BarWith<"volume">) => number {
   const instance = new VOSC(opts);
   return (bar) => instance.onData(bar);

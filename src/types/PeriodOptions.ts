@@ -5,3 +5,7 @@ export interface PeriodOptions {
   period_short?: number;
   period_signal?: number;
 }
+
+export type PeriodWith<K extends keyof PeriodOptions> = Required<
+  Pick<PeriodOptions, K>
+>;

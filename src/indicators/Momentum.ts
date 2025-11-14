@@ -1,4 +1,4 @@
-import type { PeriodOptions } from "../types/PeriodOptions.js";
+import type { PeriodWith } from "../types/PeriodOptions.js";
 import type { BarWith } from "../types/BarData.js";
 import { CircularBuffer } from "../classes/Containers.js";
 import { wilders_factor, smooth } from "../utils/math.js";
@@ -37,10 +37,7 @@ export function useBOP(): (
 export class MOM {
   private buffer: CircularBuffer<number>;
 
-  constructor(opts: PeriodOptions) {
-    if (opts.period === undefined) {
-      throw new Error("MOM requires period");
-    }
+  constructor(opts: PeriodWith<"period">) {
     this.buffer = new CircularBuffer(opts.period + 1);
   }
 
@@ -63,7 +60,9 @@ export class MOM {
  * @param opts Period configuration
  * @returns Function that processes data and returns momentum
  */
-export function useMOM(opts: PeriodOptions): (bar: BarWith<"close">) => number {
+export function useMOM(
+  opts: PeriodWith<"period">
+): (bar: BarWith<"close">) => number {
   const instance = new MOM(opts);
   return (bar) => instance.onData(bar);
 }
@@ -75,10 +74,7 @@ export function useMOM(opts: PeriodOptions): (bar: BarWith<"close">) => number {
 export class ROC {
   private buffer: CircularBuffer<number>;
 
-  constructor(opts: PeriodOptions) {
-    if (opts.period === undefined) {
-      throw new Error("ROC requires period");
-    }
+  constructor(opts: PeriodWith<"period">) {
     this.buffer = new CircularBuffer(opts.period + 1);
   }
 
@@ -102,7 +98,9 @@ export class ROC {
  * @param opts Period configuration
  * @returns Function that processes data and returns rate of change
  */
-export function useROC(opts: PeriodOptions): (bar: BarWith<"close">) => number {
+export function useROC(
+  opts: PeriodWith<"period">
+): (bar: BarWith<"close">) => number {
   const instance = new ROC(opts);
   return (bar) => instance.onData(bar);
 }
@@ -114,10 +112,7 @@ export function useROC(opts: PeriodOptions): (bar: BarWith<"close">) => number {
 export class ROCR {
   private buffer: CircularBuffer<number>;
 
-  constructor(opts: PeriodOptions) {
-    if (opts.period === undefined) {
-      throw new Error("ROCR requires period");
-    }
+  constructor(opts: PeriodWith<"period">) {
     this.buffer = new CircularBuffer(opts.period + 1);
   }
 
@@ -142,7 +137,7 @@ export class ROCR {
  * @returns Function that processes data and returns rate of change ratio
  */
 export function useROCR(
-  opts: PeriodOptions
+  opts: PeriodWith<"period">
 ): (bar: BarWith<"close">) => number {
   const instance = new ROCR(opts);
   return (bar) => instance.onData(bar);
@@ -158,10 +153,7 @@ export class RSI {
   private avgLoss?: number;
   private prevClose?: number;
 
-  constructor(opts: PeriodOptions) {
-    if (opts.period === undefined) {
-      throw new Error("RSI requires period");
-    }
+  constructor(opts: PeriodWith<"period">) {
     this.alpha = wilders_factor(opts.period);
   }
 
@@ -204,7 +196,9 @@ export class RSI {
  * @param opts Period configuration
  * @returns Function that processes data and returns RSI
  */
-export function useRSI(opts: PeriodOptions): (bar: BarWith<"close">) => number {
+export function useRSI(
+  opts: PeriodWith<"period">
+): (bar: BarWith<"close">) => number {
   const instance = new RSI(opts);
   return (bar) => instance.onData(bar);
 }
@@ -217,10 +211,7 @@ export class CMO {
   private buffer: CircularBuffer<number>;
   private prevClose?: number;
 
-  constructor(opts: PeriodOptions) {
-    if (opts.period === undefined) {
-      throw new Error("CMO requires period");
-    }
+  constructor(opts: PeriodWith<"period">) {
     this.buffer = new CircularBuffer(opts.period);
   }
 
@@ -260,7 +251,9 @@ export class CMO {
  * @param opts Period configuration
  * @returns Function that processes data and returns CMO
  */
-export function useCMO(opts: PeriodOptions): (bar: BarWith<"close">) => number {
+export function useCMO(
+  opts: PeriodWith<"period">
+): (bar: BarWith<"close">) => number {
   const instance = new CMO(opts);
   return (bar) => instance.onData(bar);
 }

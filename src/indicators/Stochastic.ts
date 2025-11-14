@@ -1,5 +1,5 @@
 import type { BarWith } from "../types/BarData.js";
-import type { PeriodOptions } from "../types/PeriodOptions.js";
+import type { PeriodOptions, PeriodWith } from "../types/PeriodOptions.js";
 import { CircularBuffer } from "../classes/Containers.js";
 import { SMA } from "../classes/Foundation.js";
 import { RSI } from "./Momentum.js";
@@ -92,10 +92,7 @@ export class STOCHRSI {
   private rsi: RSI;
   private buffer: CircularBuffer<number>;
 
-  constructor(opts: PeriodOptions) {
-    if (opts.period === undefined) {
-      throw new Error("STOCHRSI requires period");
-    }
+  constructor(opts: PeriodWith<"period">) {
     this.rsi = new RSI(opts);
     this.buffer = new CircularBuffer(opts.period);
   }
@@ -131,7 +128,7 @@ export class STOCHRSI {
  * @returns Function that processes bar data and returns Stochastic RSI
  */
 export function useSTOCHRSI(
-  opts: PeriodOptions
+  opts: PeriodWith<"period">
 ): (bar: BarWith<"close">) => number {
   const instance = new STOCHRSI(opts);
   return (bar) => instance.onData(bar);
@@ -145,10 +142,7 @@ export class WILLR {
   private highs: CircularBuffer<number>;
   private lows: CircularBuffer<number>;
 
-  constructor(opts: PeriodOptions) {
-    if (opts.period === undefined) {
-      throw new Error("WILLR requires period");
-    }
+  constructor(opts: PeriodWith<"period">) {
     this.highs = new CircularBuffer(opts.period);
     this.lows = new CircularBuffer(opts.period);
   }
@@ -186,7 +180,7 @@ export class WILLR {
  * @returns Function that processes bar data and returns Williams %R
  */
 export function useWILLR(
-  opts: PeriodOptions
+  opts: PeriodWith<"period">
 ): (bar: BarWith<"high" | "low" | "close">) => number {
   const instance = new WILLR(opts);
   return (bar) => instance.onData(bar);

@@ -1,5 +1,5 @@
 import type { BarWith } from "../types/BarData.js";
-import type { PeriodOptions } from "../types/PeriodOptions.js";
+import type { PeriodWith } from "../types/PeriodOptions.js";
 import { EMA, MinMax, SMA } from "../classes/Foundation.js";
 import { CircularBuffer } from "../classes/Containers.js";
 
@@ -39,9 +39,7 @@ export class APO {
   private emaShort: EMA;
   private emaLong: EMA;
 
-  constructor(
-    opts: Required<Pick<PeriodOptions, "period_short" | "period_long">>
-  ) {
+  constructor(opts: PeriodWith<"period_short" | "period_long">) {
     this.emaShort = new EMA({ period: opts.period_short });
     this.emaLong = new EMA({ period: opts.period_long });
   }
@@ -62,7 +60,7 @@ export class APO {
  * @returns Function that processes bar data and returns APO
  */
 export function useAPO(
-  opts: Required<Pick<PeriodOptions, "period_short" | "period_long">>
+  opts: PeriodWith<"period_short" | "period_long">
 ): (bar: BarWith<"close">) => number {
   const instance = new APO(opts);
   return (bar) => instance.onData(bar);
@@ -76,11 +74,8 @@ export class DPO {
   private sma: SMA;
   private lookback: number;
 
-  constructor(opts: PeriodOptions) {
-    if (opts.period === undefined) {
-      throw new Error("DPO requires period");
-    }
-    this.sma = new SMA(opts);
+  constructor(opts: PeriodWith<"period">) {
+    this.sma = new SMA({ period: opts.period });
     this.lookback = Math.floor(opts.period / 2) + 1;
   }
 
@@ -107,7 +102,9 @@ export class DPO {
  * @param opts Period configuration
  * @returns Function that processes bar data and returns DPO
  */
-export function useDPO(opts: PeriodOptions): (bar: BarWith<"close">) => number {
+export function useDPO(
+  opts: PeriodWith<"period">
+): (bar: BarWith<"close">) => number {
   const instance = new DPO(opts);
   return (bar) => instance.onData(bar);
 }
@@ -121,11 +118,8 @@ export class Fisher {
   private val: number = 0;
   private fisher: number = 0;
 
-  constructor(opts: PeriodOptions) {
-    if (opts.period === undefined) {
-      throw new Error("Fisher requires period");
-    }
-    this.minmax = new MinMax(opts);
+  constructor(opts: PeriodWith<"period">) {
+    this.minmax = new MinMax({ period: opts.period });
   }
 
   /**
@@ -159,7 +153,7 @@ export class Fisher {
  * @returns Function that processes bar data and returns Fisher Transform
  */
 export function useFisher(
-  opts: PeriodOptions
+  opts: PeriodWith<"period">
 ): (bar: BarWith<"high" | "low">) => number {
   const instance = new Fisher(opts);
   return (bar) => instance.onData(bar);
@@ -175,9 +169,7 @@ export class MACD {
   private emaSignal: EMA;
 
   constructor(
-    opts: Required<
-      Pick<PeriodOptions, "period_short" | "period_long" | "period_signal">
-    >
+    opts: PeriodWith<"period_short" | "period_long" | "period_signal">
   ) {
     this.emaShort = new EMA({ period: opts.period_short });
     this.emaLong = new EMA({ period: opts.period_long });
@@ -208,9 +200,7 @@ export class MACD {
  * @returns Function that processes bar data and returns MACD values
  */
 export function useMACD(
-  opts: Required<
-    Pick<PeriodOptions, "period_short" | "period_long" | "period_signal">
-  >
+  opts: PeriodWith<"period_short" | "period_long" | "period_signal">
 ): (bar: BarWith<"close">) => {
   macd: number;
   signal: number;
@@ -228,9 +218,7 @@ export class PPO {
   private emaShort: EMA;
   private emaLong: EMA;
 
-  constructor(
-    opts: Required<Pick<PeriodOptions, "period_short" | "period_long">>
-  ) {
+  constructor(opts: PeriodWith<"period_short" | "period_long">) {
     this.emaShort = new EMA({ period: opts.period_short });
     this.emaLong = new EMA({ period: opts.period_long });
   }
@@ -255,7 +243,7 @@ export class PPO {
  * @returns Function that processes bar data and returns PPO
  */
 export function usePPO(
-  opts: Required<Pick<PeriodOptions, "period_short" | "period_long">>
+  opts: PeriodWith<"period_short" | "period_long">
 ): (bar: BarWith<"close">) => number {
   const instance = new PPO(opts);
   return (bar) => instance.onData(bar);
@@ -268,11 +256,8 @@ export function usePPO(
 export class QSTICK {
   private sma: SMA;
 
-  constructor(opts: PeriodOptions) {
-    if (opts.period === undefined) {
-      throw new Error("QSTICK requires period");
-    }
-    this.sma = new SMA(opts);
+  constructor(opts: PeriodWith<"period">) {
+    this.sma = new SMA({ period: opts.period });
   }
 
   /**
@@ -292,7 +277,7 @@ export class QSTICK {
  * @returns Function that processes bar data and returns QSTICK
  */
 export function useQSTICK(
-  opts: PeriodOptions
+  opts: PeriodWith<"period">
 ): (bar: BarWith<"open" | "close">) => number {
   const instance = new QSTICK(opts);
   return (bar) => instance.onData(bar);
@@ -308,13 +293,10 @@ export class TRIX {
   private ema3: EMA;
   private prevEma3?: number;
 
-  constructor(opts: PeriodOptions) {
-    if (opts.period === undefined) {
-      throw new Error("TRIX requires period");
-    }
-    this.ema1 = new EMA(opts);
-    this.ema2 = new EMA(opts);
-    this.ema3 = new EMA(opts);
+  constructor(opts: PeriodWith<"period">) {
+    this.ema1 = new EMA({ period: opts.period });
+    this.ema2 = new EMA({ period: opts.period });
+    this.ema3 = new EMA({ period: opts.period });
   }
 
   /**
@@ -344,7 +326,7 @@ export class TRIX {
  * @returns Function that processes bar data and returns TRIX
  */
 export function useTRIX(
-  opts: PeriodOptions
+  opts: PeriodWith<"period">
 ): (bar: BarWith<"close">) => number {
   const instance = new TRIX(opts);
   return (bar) => instance.onData(bar);
@@ -369,11 +351,7 @@ export class ULTOSC {
   private sumTrMed: number = 0;
   private sumTrLong: number = 0;
 
-  constructor(
-    opts: Required<
-      Pick<PeriodOptions, "period_short" | "period_med" | "period_long">
-    >
-  ) {
+  constructor(opts: PeriodWith<"period_short" | "period_med" | "period_long">) {
     this.bpShort = new CircularBuffer<number>(opts.period_short);
     this.bpMed = new CircularBuffer<number>(opts.period_med);
     this.bpLong = new CircularBuffer<number>(opts.period_long);
@@ -452,9 +430,7 @@ export class ULTOSC {
  * @returns Function that processes bar data and returns Ultimate Oscillator
  */
 export function useULTOSC(
-  opts: Required<
-    Pick<PeriodOptions, "period_short" | "period_med" | "period_long">
-  >
+  opts: PeriodWith<"period_short" | "period_med" | "period_long">
 ): (bar: BarWith<"high" | "low" | "close">) => number {
   const instance = new ULTOSC(opts);
   return (bar: BarWith<"high" | "low" | "close">) => instance.onData(bar);

@@ -1,5 +1,5 @@
-import type { BarData, BarWith } from "../types/BarData.js";
-import type { PeriodOptions } from "../types/PeriodOptions.js";
+import type { BarWith } from "../types/BarData.js";
+import type { PeriodWith } from "../types/PeriodOptions.js";
 import { CircularBuffer } from "../classes/Containers.js";
 import { EMA, SMA } from "../classes/Foundation.js";
 import { ATR } from "./Volatility.js";
@@ -14,10 +14,7 @@ export class AROON {
   private lows: CircularBuffer<number>;
   private period: number;
 
-  constructor(opts: PeriodOptions) {
-    if (opts.period === undefined) {
-      throw new Error("AROON requires period");
-    }
+  constructor(opts: PeriodWith<"period">) {
     this.period = opts.period;
     this.highs = new CircularBuffer(opts.period + 1);
     this.lows = new CircularBuffer(opts.period + 1);
@@ -71,7 +68,7 @@ export class AROON {
  * @param opts Period configuration
  * @returns Function that processes bar data and returns {up, down}
  */
-export function useAROON(opts: PeriodOptions): (
+export function useAROON(opts: PeriodWith<"period">): (
   bar: BarWith<"high" | "low">
 ) => {
   up: number;
@@ -88,7 +85,7 @@ export function useAROON(opts: PeriodOptions): (
 export class AROONOSC {
   private aroon: AROON;
 
-  constructor(opts: PeriodOptions) {
+  constructor(opts: PeriodWith<"period">) {
     this.aroon = new AROON(opts);
   }
 
@@ -109,7 +106,7 @@ export class AROONOSC {
  * @returns Function that processes bar data and returns AROONOSC
  */
 export function useAROONOSC(
-  opts: PeriodOptions
+  opts: PeriodWith<"period">
 ): (bar: BarWith<"high" | "low">) => number {
   const instance = new AROONOSC(opts);
   return (bar) => instance.onData(bar);
@@ -123,10 +120,7 @@ export class CCI {
   private buffer: CircularBuffer<number>;
   private sma: SMA;
 
-  constructor(opts: PeriodOptions) {
-    if (opts.period === undefined) {
-      throw new Error("CCI requires period");
-    }
+  constructor(opts: PeriodWith<"period">) {
     this.buffer = new CircularBuffer(opts.period);
     this.sma = new SMA(opts);
   }
@@ -161,7 +155,7 @@ export class CCI {
  * @returns Function that processes bar data and returns CCI
  */
 export function useCCI(
-  opts: PeriodOptions
+  opts: PeriodWith<"period">
 ): (bar: BarWith<"high" | "low" | "close">) => number {
   const instance = new CCI(opts);
   return (bar) => instance.onData(bar);
@@ -174,10 +168,7 @@ export function useCCI(
 export class VHF {
   private buffer: CircularBuffer<number>;
 
-  constructor(opts: PeriodOptions) {
-    if (opts.period === undefined) {
-      throw new Error("VHF requires period");
-    }
+  constructor(opts: PeriodWith<"period">) {
     this.buffer = new CircularBuffer(opts.period);
   }
 
@@ -215,7 +206,9 @@ export class VHF {
  * @param opts Period configuration
  * @returns Function that processes bar data and returns VHF
  */
-export function useVHF(opts: PeriodOptions): (bar: BarWith<"close">) => number {
+export function useVHF(
+  opts: PeriodWith<"period">
+): (bar: BarWith<"close">) => number {
   const instance = new VHF(opts);
   return (bar) => instance.onData(bar);
 }
@@ -230,10 +223,7 @@ export class DM {
   private prevHigh?: number;
   private prevLow?: number;
 
-  constructor(opts: PeriodOptions) {
-    if (opts.period === undefined) {
-      throw new Error("DM requires period");
-    }
+  constructor(opts: PeriodWith<"period">) {
     this.emaPlus = new EMA({ alpha: wilders_factor(opts.period) });
     this.emaMinus = new EMA({ alpha: wilders_factor(opts.period) });
   }
@@ -281,7 +271,7 @@ export class DM {
  * @returns Function that processes bar data and returns {plus, minus}
  */
 export function useDM(
-  opts: PeriodOptions
+  opts: PeriodWith<"period">
 ): (bar: BarWith<"high" | "low">) => { plus: number; minus: number } {
   const instance = new DM(opts);
   return (bar) => instance.onData(bar);
@@ -295,10 +285,7 @@ export class DI {
   private dm: DM;
   private atr: ATR;
 
-  constructor(opts: PeriodOptions) {
-    if (opts.period === undefined) {
-      throw new Error("DI requires period");
-    }
+  constructor(opts: PeriodWith<"period">) {
     this.dm = new DM(opts);
     this.atr = new ATR(opts);
   }
@@ -331,7 +318,7 @@ export class DI {
  * @param opts Period configuration
  * @returns Function that processes bar data and returns {plus, minus}
  */
-export function useDI(opts: PeriodOptions): (
+export function useDI(opts: PeriodWith<"period">): (
   bar: BarWith<"high" | "low" | "close">
 ) => {
   plus: number;
@@ -348,10 +335,7 @@ export function useDI(opts: PeriodOptions): (
 export class DX {
   private di: DI;
 
-  constructor(opts: PeriodOptions) {
-    if (opts.period === undefined) {
-      throw new Error("DX requires period");
-    }
+  constructor(opts: PeriodWith<"period">) {
     this.di = new DI(opts);
   }
 
@@ -379,7 +363,7 @@ export class DX {
  * @returns Function that processes bar data and returns DX
  */
 export function useDX(
-  opts: PeriodOptions
+  opts: PeriodWith<"period">
 ): (bar: BarWith<"high" | "low" | "close">) => number {
   const instance = new DX(opts);
   return (bar) => instance.onData(bar);
@@ -393,10 +377,7 @@ export class ADX {
   private dx: DX;
   private ema: EMA;
 
-  constructor(opts: PeriodOptions) {
-    if (opts.period === undefined) {
-      throw new Error("ADX requires period");
-    }
+  constructor(opts: PeriodWith<"period">) {
     this.dx = new DX(opts);
     this.ema = new EMA({ alpha: wilders_factor(opts.period) });
   }
@@ -418,7 +399,7 @@ export class ADX {
  * @returns Function that processes bar data and returns ADX
  */
 export function useADX(
-  opts: PeriodOptions
+  opts: PeriodWith<"period">
 ): (bar: BarWith<"high" | "low" | "close">) => number {
   const instance = new ADX(opts);
   return (bar) => instance.onData(bar);
@@ -432,7 +413,7 @@ export class ADXR {
   private adx: ADX;
   private buffer: CircularBuffer<number>;
 
-  constructor(opts: PeriodOptions) {
+  constructor(opts: PeriodWith<"period">) {
     if (opts.period === undefined) {
       throw new Error("ADXR requires period");
     }
@@ -464,7 +445,7 @@ export class ADXR {
  * @returns Function that processes bar data and returns ADXR
  */
 export function useADXR(
-  opts: PeriodOptions
+  opts: PeriodWith<"period">
 ): (bar: BarWith<"high" | "low" | "close">) => number {
   const instance = new ADXR(opts);
   return (bar) => instance.onData(bar);
