@@ -1,0 +1,50 @@
+{
+  "name": "trading-indi",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "bench": "tsx benchmarks/bench.ts",
+    "prepublishOnly": "pnpm run clean && pnpm run build"
+  },
+  "author": "Jun",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/junduck/trading-indi"
+  },
+  "bugs": {
+    "url": "https://github.com/junduck/trading-indi/issues"
+  },
+  "homepage": "https://github.com/junduck/trading-indi",
+  "packageManager": "pnpm@10.21.0",
+  "devDependencies": {
+    "@thuantan2060/technicalindicators": "^4.1.3",
+    "@types/node": "^24.10.1",
+    "@vitest/coverage-v8": "^4.0.8",
+    "@vitest/ui": "^4.0.8",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.8"
+  }
+}

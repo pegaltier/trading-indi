@@ -1,0 +1,224 @@
+import type { PeriodOptions } from "../types/PeriodOptions.js";
+import { exp_factor, smooth, smooth_roll } from "../utils/math.js";
+import { CircularBuffer, Deque } from "./Containers.js";
+
+/**
+ * Exponential Moving Average - stateful indicator.
+ * Uses exponential smoothing with alpha = 2/(period+1).
+ */
+export class EMA {
+  private alpha: number;
+  private ema?: number;
+
+  constructor(opts: PeriodOptions & { alpha?: number }) {
+    if (opts.period === undefined && opts.alpha === undefined) {
+      throw new Error("EMA requires period or alpha");
+    }
+    if (opts.alpha) {
+      this.alpha = opts.alpha;
+    } else {
+      this.alpha = exp_factor(opts.period!);
+    }
+  }
+
+  /**
+   * Process new data point.
+   * @param x New price value
+   * @returns Current EMA value
+   */
+  onData(x: number): number {
+    if (this.ema === undefined) {
+      this.ema = x;
+    } else {
+      this.ema = smooth(this.ema, x, this.alpha);
+    }
+    return this.ema;
+  }
+}
+
+/**
+ * Creates EMA closure for functional usage.
+ * @param opts Period configuration
+ * @returns Function that processes data and returns EMA
+ */
+export function useEMA(opts: PeriodOptions): (x: number) => number {
+  const instance = new EMA(opts);
+  return (x: number) => instance.onData(x);
+}
+
+/**
+ * Simple Moving Average - stateful indicator.
+ * Maintains rolling window of prices for exact average calculation.
+ */
+export class SMA {
+  readonly buffer: CircularBuffer<number>;
+  private sma: number = 0;
+  private weight: number;
+
+  constructor(opts: PeriodOptions) {
+    if (opts.period === undefined) {
+      throw new Error("SMA requires period");
+    }
+    this.buffer = new CircularBuffer<number>(opts.period);
+    this.weight = 1.0 / opts.period;
+  }
+
+  /**
+   * Process new data point.
+   * @param x New price value
+   * @returns Current SMA value
+   */
+  onData(x: number): number {
+    if (!this.buffer.full()) {
+      this.buffer.push(x);
+      this.sma = smooth(this.sma, x, 1 / this.buffer.size());
+    } else {
+      const old = this.buffer.front()!;
+      this.sma = smooth_roll(this.sma, x, old, this.weight);
+      this.buffer.push(x);
+    }
+    return this.sma;
+  }
+}
+
+/**
+ * Creates SMA closure for functional usage.
+ * @param opts Period configuration
+ * @returns Function that processes data and returns SMA
+ */
+export function useSMA(opts: PeriodOptions): (x: number) => number {
+  const instance = new SMA(opts);
+  return (x: number) => instance.onData(x);
+}
+
+/**
+ * Variance - stateful indicator.
+ * Uses Welford's online algorithm for numerical stability.
+ * Supports Delta Degrees of Freedom (ddof) for sample variance.
+ */
+export class Variance {
+  readonly buffer: CircularBuffer<number>;
+  private m: number = 0;
+  private m2: number = 0;
+  private ddof: number;
+  private weight: number;
+  private varWeight: number;
+
+  constructor(opts: PeriodOptions & { ddof?: number }) {
+    if (opts.period === undefined) {
+      throw new Error("Variance requires period");
+    }
+    this.ddof = opts.ddof ?? 0;
+    if (opts.period <= this.ddof) {
+      throw new Error("Period should be larger than DDoF.");
+    }
+    this.buffer = new CircularBuffer<number>(opts.period);
+    this.weight = 1.0 / opts.period;
+    this.varWeight = 1.0 / (opts.period - this.ddof);
+  }
+
+  /**
+   * Process new data point.
+   * @param x New value
+   * @returns Object with mean and variance
+   */
+  onData(x: number): { m: number; var: number } {
+    if (!this.buffer.full()) {
+      this.buffer.push(x);
+      const delta = x - this.m;
+      this.m += delta / this.buffer.size();
+      this.m2 += (x - this.m) * delta;
+      if (this.buffer.size() <= this.ddof) {
+        return { m: this.m, var: 0 };
+      } else {
+        return { m: this.m, var: this.m2 / (this.buffer.size() - this.ddof) };
+      }
+    } else {
+      const x0 = this.buffer.front()!;
+      const d = x - this.m;
+      const d0 = x0 - this.m;
+      const dx = x - x0;
+      this.m += this.weight * dx;
+      this.m2 += dx * (d - this.weight * dx + d0);
+      this.buffer.push(x);
+      return { m: this.m, var: this.m2 * this.varWeight };
+    }
+  }
+}
+
+/**
+ * Creates Variance closure for functional usage.
+ * @param opts Period and ddof configuration
+ * @returns Function that processes data and returns {m, var}
+ */
+export function useVariance(
+  opts: PeriodOptions & { ddof?: number }
+): (x: number) => { m: number; var: number } {
+  const instance = new Variance(opts);
+  return (x: number) => instance.onData(x);
+}
+
+/**
+ * Min/Max - stateful indicator.
+ * Uses monotonic deque algorithm for efficient sliding window min/max.
+ */
+export class MinMax {
+  readonly buffer: CircularBuffer<number>;
+  private minDeque: Deque<number>;
+  private maxDeque: Deque<number>;
+
+  constructor(opts: PeriodOptions) {
+    if (opts.period === undefined) {
+      throw new Error("MinMax requires period");
+    }
+    this.buffer = new CircularBuffer<number>(opts.period);
+    this.minDeque = new Deque(opts.period);
+    this.maxDeque = new Deque(opts.period);
+  }
+
+  /**
+   * Process new data point.
+   * @param x New value
+   * @returns Object with min and max values in the window
+   */
+  onData(x: number): { min: number; max: number } {
+    if (this.buffer.full()) {
+      const old = this.buffer.front()!;
+      if (!this.minDeque.empty() && this.minDeque.front() === old) {
+        this.minDeque.pop_front();
+      }
+      if (!this.maxDeque.empty() && this.maxDeque.front() === old) {
+        this.maxDeque.pop_front();
+      }
+    }
+
+    this.buffer.push(x);
+
+    while (!this.minDeque.empty() && this.minDeque.back()! >= x) {
+      this.minDeque.pop_back();
+    }
+    this.minDeque.push_back(x);
+
+    while (!this.maxDeque.empty() && this.maxDeque.back()! <= x) {
+      this.maxDeque.pop_back();
+    }
+    this.maxDeque.push_back(x);
+
+    return {
+      min: this.minDeque.front()!,
+      max: this.maxDeque.front()!,
+    };
+  }
+}
+
+/**
+ * Creates MinMax closure for functional usage.
+ * @param opts Period configuration
+ * @returns Function that processes data and returns {min, max}
+ */
+export function useMinMax(
+  opts: PeriodOptions
+): (x: number) => { min: number; max: number } {
+  const instance = new MinMax(opts);
+  return (x: number) => instance.onData(x);
+}
