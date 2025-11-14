@@ -14,10 +14,12 @@ Traditional technical indicator libraries recalculate entire datasets on each ne
 
 ## Installation
 
+> **Note**: This package is not yet published on npm. You can install it directly from the GitHub repository:
+
 ```bash
-npm install trading-indi
+npm install https://github.com/junduck/trading-indi.git
 # or
-pnpm add trading-indi
+pnpm add https://github.com/junduck/trading-indi.git
 ```
 
 ## Quick Start
