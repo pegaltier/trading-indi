@@ -39,12 +39,14 @@ The library can easily handle real-time trading scenarios, including tick data p
 
 ## Installation
 
-> **Note**: This package is not yet published on npm. You can install it directly from the GitHub repository:
+Install the package from npm:
 
 ```bash
-npm install https://github.com/junduck/trading-indi.git
+npm install @junduck/trading-indi
 # or
-pnpm add https://github.com/junduck/trading-indi.git
+yarn add @junduck/trading-indi
+# or
+pnpm add @junduck/trading-indi
 ```
 
 ## Quick Start
@@ -52,7 +54,7 @@ pnpm add https://github.com/junduck/trading-indi.git
 ### Class-Based Usage (Stateful)
 
 ```typescript
-import { RSI, EMA, MACD, ATR, BBANDS, ADX } from 'trading-indi';
+import { RSI, EMA, MACD, ATR, BBANDS, ADX } from '@junduck/trading-indi';
 
 const rsi = new RSI({ period: 14 });
 const ema = new EMA({ period: 20 });
@@ -81,7 +83,7 @@ priceStream.on('data', (bar) => {
 ### Functional Usage (Hooks)
 
 ```typescript
-import { useRSI, useEMA, useMACD, useATR, useBBANDS, useADX } from 'trading-indi';
+import { useRSI, useEMA, useMACD, useATR, useBBANDS, useADX } from '@junduck/trading-indi';
 
 const getRSI = useRSI({ period: 14 });
 const getEMA = useEMA({ period: 20 });
@@ -225,7 +227,7 @@ for (const bar of historicalData) {
 ## Real-World Example: Intraday Strategy
 
 ```typescript
-import { RSI, ATR, EMA, BBANDS, ADX, MACD, VOLUME } from 'trading-indi';
+import { RSI, ATR, EMA, BBANDS, ADX, MACD, VOLUME } from '@junduck/trading-indi';
 
 const rsi = new RSI({ period: 14 });
 const atr = new ATR({ period: 14 });
@@ -280,7 +282,7 @@ websocket.on('tick', (bar) => {
 The library includes advanced statistical indicators for quantitative analysis:
 
 ```typescript
-import { Corr, Beta, ZSCORE } from 'trading-indi';
+import { Corr, Beta, ZSCORE } from '@junduck/trading-indi';
 
 // Correlation between two assets
 const correlation = new Corr({ period: 20 });
@@ -310,6 +312,10 @@ interface BarData {
 ```
 
 Each indicator only requires the fields it needs. Check TypeScript types for specific requirements.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes.
 
 ## License
 
