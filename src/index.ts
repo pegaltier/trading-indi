@@ -6,13 +6,34 @@ export { CircularBuffer, Deque } from "./classes/Containers.js";
 export {
   EMA,
   useEMA,
+  EWMA,
+  useEWMA,
   SMA,
   useSMA,
   Variance,
   useVariance,
+  Stddev,
+  useStddev,
+  Min,
+  useMin,
+  Max,
+  useMax,
+  Sum,
+  useSum,
   MinMax,
   useMinMax,
 } from "./classes/Foundation.js";
+
+export {
+  VarianceEW,
+  useVarianceEW,
+  Cov,
+  useCov,
+  Corr,
+  useCorr,
+  Beta,
+  useBeta,
+} from "./classes/Stats.js";
 
 export {
   VOLATILITY,
@@ -151,12 +172,3 @@ export {
   BBPOWER,
   useBBPOWER,
 } from "./indicators/Momentum.js";
-
-export {
-  ZSCORE,
-  useZSCORE,
-  CORRELATION,
-  useCORRELATION,
-  BETA,
-  useBETA,
-} from "./indicators/Statistical.js";
