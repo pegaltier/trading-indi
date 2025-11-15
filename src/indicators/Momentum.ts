@@ -1,7 +1,7 @@
 import type { PeriodWith } from "../types/PeriodOptions.js";
 import type { BarWith } from "../types/BarData.js";
 import { CircularBuffer } from "../classes/Containers.js";
-import { wilders_factor, smooth } from "../utils/math.js";
+import { wilders_factor, SmoothedAccum } from "../utils/math.js";
 import { EMA, SMA } from "../classes/Foundation.js";
 
 /**
@@ -150,8 +150,8 @@ export function useROCR(
  */
 export class RSI {
   private alpha: number;
-  private avgGain?: number;
-  private avgLoss?: number;
+  private avgGain?: SmoothedAccum;
+  private avgLoss?: SmoothedAccum;
   private prevClose?: number;
 
   constructor(opts: PeriodWith<"period">) {
@@ -176,18 +176,18 @@ export class RSI {
     const loss = change < 0 ? -change : 0;
 
     if (this.avgGain === undefined) {
-      this.avgGain = gain;
-      this.avgLoss = loss;
+      this.avgGain = new SmoothedAccum(gain);
+      this.avgLoss = new SmoothedAccum(loss);
     } else {
-      this.avgGain = smooth(this.avgGain, gain, this.alpha);
-      this.avgLoss = smooth(this.avgLoss!, loss, this.alpha);
+      this.avgGain.accum(gain, this.alpha);
+      this.avgLoss!.accum(loss, this.alpha);
     }
 
-    if (this.avgLoss === 0) {
+    if (this.avgLoss!.val === 0) {
       return 100;
     }
 
-    const rs = this.avgGain / this.avgLoss;
+    const rs = this.avgGain.val / this.avgLoss!.val;
     return 100 - 100 / (1 + rs);
   }
 }

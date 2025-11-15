@@ -1,5 +1,5 @@
 import type { PeriodOptions, PeriodWith } from "../types/PeriodOptions.js";
-import { exp_factor, Kahan } from "../utils/math.js";
+import { exp_factor, Kahan, SmoothedAccum } from "../utils/math.js";
 import { CircularBuffer } from "./Containers.js";
 
 /**
@@ -8,7 +8,7 @@ import { CircularBuffer } from "./Containers.js";
  */
 export class VarianceEW {
   private m?: number;
-  private s2: number = 0;
+  private s2: SmoothedAccum = new SmoothedAccum();
   private alpha: number;
 
   constructor(opts: PeriodOptions & { alpha?: number }) {
@@ -30,13 +30,13 @@ export class VarianceEW {
   onData(x: number): { mean: number; variance: number } {
     if (this.m === undefined) {
       this.m = x;
-      return { mean: this.m, variance: this.s2 };
+      return { mean: this.m, variance: this.s2.val };
     }
     const d = x - this.m;
     this.m += d * this.alpha;
     const d2 = x - this.m;
-    this.s2 += (d * d2 - this.s2) * this.alpha;
-    return { mean: this.m, variance: this.s2 };
+    this.s2.accum(d * d2, this.alpha);
+    return { mean: this.m, variance: this.s2.val };
   }
 }
 
@@ -60,9 +60,9 @@ export function useVarianceEW(
 export class Cov {
   readonly bufferX: CircularBuffer<number>;
   readonly bufferY: CircularBuffer<number>;
-  private readonly kahanMXY: Kahan;
-  private mx: number = 0;
-  private my: number = 0;
+  private readonly kahanMXY: Kahan = new Kahan();
+  private mx: SmoothedAccum = new SmoothedAccum();
+  private my: SmoothedAccum = new SmoothedAccum();
   private ddof: number;
   private weight: number;
   private covWeight: number;
@@ -74,7 +74,6 @@ export class Cov {
     }
     this.bufferX = new CircularBuffer<number>(opts.period);
     this.bufferY = new CircularBuffer<number>(opts.period);
-    this.kahanMXY = new Kahan();
     this.weight = 1.0 / opts.period;
     this.covWeight = 1.0 / (opts.period - this.ddof);
   }
@@ -92,41 +91,41 @@ export class Cov {
     if (!this.bufferX.full()) {
       const n = this.bufferX.size() + 1;
       const a = 1.0 / n;
-      const dy = y - this.my;
+      const dy = y - this.my.val;
 
-      this.mx += (x - this.mx) * a;
-      this.my += dy * a;
-      this.kahanMXY.add((x - this.mx) * dy);
+      this.mx.accum(x, a);
+      this.my.accum(y, a);
+      this.kahanMXY.accum((x - this.mx.val) * dy);
 
       this.bufferX.push(x);
       this.bufferY.push(y);
 
       if (n <= this.ddof) {
-        return { meanX: this.mx, meanY: this.my, covariance: 0 };
+        return { meanX: this.mx.val, meanY: this.my.val, covariance: 0 };
       } else {
         return {
-          meanX: this.mx,
-          meanY: this.my,
-          covariance: this.kahanMXY.sum / (n - this.ddof),
+          meanX: this.mx.val,
+          meanY: this.my.val,
+          covariance: this.kahanMXY.val / (n - this.ddof),
         };
       }
     } else {
       const x0 = this.bufferX.front()!;
       const y0 = this.bufferY.front()!;
-      const dy = y - this.my;
-      const dy0 = y0 - this.my;
+      const dy = y - this.my.val;
+      const dy0 = y0 - this.my.val;
 
-      this.mx += (x - x0) * this.weight;
-      this.my += (y - y0) * this.weight;
-      this.kahanMXY.add((x - this.mx) * dy - (x0 - this.mx) * dy0);
+      this.mx.roll(x, x0, this.weight);
+      this.my.roll(y, y0, this.weight);
+      this.kahanMXY.accum((x - this.mx.val) * dy - (x0 - this.mx.val) * dy0);
 
       this.bufferX.push(x);
       this.bufferY.push(y);
 
       return {
-        meanX: this.mx,
-        meanY: this.my,
-        covariance: this.kahanMXY.sum * this.covWeight,
+        meanX: this.mx.val,
+        meanY: this.my.val,
+        covariance: this.kahanMXY.val * this.covWeight,
       };
     }
   }
@@ -201,9 +200,9 @@ export class Corr {
 
       this.mx += dx * a;
       this.my += dy * a;
-      this.kahanMXY.add((x - this.mx) * dy);
-      this.kahanM2X.add((x - this.mx) * dx);
-      this.kahanM2Y.add((y - this.my) * dy);
+      this.kahanMXY.accum((x - this.mx) * dy);
+      this.kahanM2X.accum((x - this.mx) * dx);
+      this.kahanM2Y.accum((y - this.my) * dy);
 
       this.bufferX.push(x);
       this.bufferY.push(y);
@@ -216,9 +215,9 @@ export class Corr {
           correlation: 0,
         };
       } else {
-        const mxy = this.kahanMXY.sum;
-        const m2x = this.kahanM2X.sum;
-        const m2y = this.kahanM2Y.sum;
+        const mxy = this.kahanMXY.val;
+        const m2x = this.kahanM2X.val;
+        const m2y = this.kahanM2Y.val;
         const denom = Math.sqrt(m2x * m2y);
         return {
           meanX: this.mx,
@@ -237,16 +236,16 @@ export class Corr {
 
       this.mx += (x - x0) * this.weight;
       this.my += (y - y0) * this.weight;
-      this.kahanMXY.add((x - this.mx) * dy - (x0 - this.mx) * dy0);
-      this.kahanM2X.add((x - this.mx) * dx - (x0 - this.mx) * dx0);
-      this.kahanM2Y.add((y - this.my) * dy - (y0 - this.my) * dy0);
+      this.kahanMXY.accum((x - this.mx) * dy - (x0 - this.mx) * dy0);
+      this.kahanM2X.accum((x - this.mx) * dx - (x0 - this.mx) * dx0);
+      this.kahanM2Y.accum((y - this.my) * dy - (y0 - this.my) * dy0);
 
       this.bufferX.push(x);
       this.bufferY.push(y);
 
-      const mxy = this.kahanMXY.sum;
-      const m2x = this.kahanM2X.sum;
-      const m2y = this.kahanM2Y.sum;
+      const mxy = this.kahanMXY.val;
+      const m2x = this.kahanM2X.val;
+      const m2y = this.kahanM2Y.val;
       const denom = Math.sqrt(m2x * m2y);
 
       return {
@@ -325,8 +324,8 @@ export class Beta {
 
       this.mx += dx * a;
       this.my += dy * a;
-      this.kahanMXY.add((x - this.mx) * dy);
-      this.kahanM2X.add((x - this.mx) * dx);
+      this.kahanMXY.accum((x - this.mx) * dy);
+      this.kahanM2X.accum((x - this.mx) * dx);
 
       this.bufferX.push(x);
       this.bufferY.push(y);
@@ -334,8 +333,8 @@ export class Beta {
       if (n <= this.ddof) {
         return { meanX: this.mx, meanY: this.my, covariance: 0, beta: 0 };
       } else {
-        const mxy = this.kahanMXY.sum;
-        const m2x = this.kahanM2X.sum;
+        const mxy = this.kahanMXY.val;
+        const m2x = this.kahanM2X.val;
         const covariance = mxy / (n - this.ddof);
         const beta = m2x > 0 ? mxy / m2x : 0;
         return { meanX: this.mx, meanY: this.my, covariance, beta };
@@ -350,14 +349,14 @@ export class Beta {
 
       this.mx += (x - x0) * this.weight;
       this.my += (y - y0) * this.weight;
-      this.kahanMXY.add((x - this.mx) * dy - (x0 - this.mx) * dy0);
-      this.kahanM2X.add((x - this.mx) * dx - (x0 - this.mx) * dx0);
+      this.kahanMXY.accum((x - this.mx) * dy - (x0 - this.mx) * dy0);
+      this.kahanM2X.accum((x - this.mx) * dx - (x0 - this.mx) * dx0);
 
       this.bufferX.push(x);
       this.bufferY.push(y);
 
-      const mxy = this.kahanMXY.sum;
-      const m2x = this.kahanM2X.sum;
+      const mxy = this.kahanMXY.val;
+      const m2x = this.kahanM2X.val;
       const covariance = mxy * this.statWeight;
       const beta = m2x > 0 ? mxy / m2x : 0;
 

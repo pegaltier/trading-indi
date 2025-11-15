@@ -1,5 +1,5 @@
 import type { PeriodOptions, PeriodWith } from "../types/PeriodOptions.js";
-import { exp_factor, Kahan, smooth, smooth_roll } from "../utils/math.js";
+import { exp_factor, Kahan, SmoothedAccum } from "../utils/math.js";
 import { CircularBuffer, Deque } from "./Containers.js";
 
 /**
@@ -8,7 +8,7 @@ import { CircularBuffer, Deque } from "./Containers.js";
  */
 export class EMA {
   private alpha: number;
-  private ema?: number;
+  private ema?: SmoothedAccum;
 
   constructor(opts: PeriodOptions & { alpha?: number }) {
     if (opts.period === undefined && opts.alpha === undefined) {
@@ -28,11 +28,11 @@ export class EMA {
    */
   onData(x: number): number {
     if (this.ema === undefined) {
-      this.ema = x;
+      this.ema = new SmoothedAccum(x);
     } else {
-      this.ema = smooth(this.ema, x, this.alpha);
+      this.ema.accum(x, this.alpha);
     }
-    return this.ema;
+    return this.ema.val;
   }
 }
 
@@ -76,7 +76,7 @@ export class EWMA {
   onData(x: number): number {
     if (!this.buffer.full()) {
       this.buffer.push(x);
-      this.totalWeight.add(this.a1_n);
+      this.totalWeight.accum(this.a1_n);
       this.s = this.a1 * this.s + x;
       this.a1_n *= this.a1;
     } else {
@@ -84,7 +84,7 @@ export class EWMA {
       this.buffer.push(x);
       this.s = this.a1 * this.s + x - this.a1_n * x0;
     }
-    return this.s / this.totalWeight.sum;
+    return this.s / this.totalWeight.val;
   }
 }
 
@@ -104,7 +104,7 @@ export function useEWMA(opts: PeriodWith<"period">): (x: number) => number {
  */
 export class SMA {
   readonly buffer: CircularBuffer<number>;
-  private sma: number = 0;
+  private sma: SmoothedAccum = new SmoothedAccum();
   private weight: number;
 
   constructor(opts: PeriodWith<"period">) {
@@ -120,13 +120,13 @@ export class SMA {
   onData(x: number): number {
     if (!this.buffer.full()) {
       this.buffer.push(x);
-      this.sma = smooth(this.sma, x, 1 / this.buffer.size());
+      this.sma.accum(x, 1 / this.buffer.size());
     } else {
       const old = this.buffer.front()!;
-      this.sma = smooth_roll(this.sma, x, old, this.weight);
+      this.sma.roll(x, old, this.weight);
       this.buffer.push(x);
     }
-    return this.sma;
+    return this.sma.val;
   }
 }
 
@@ -147,9 +147,8 @@ export function useSMA(opts: PeriodWith<"period">): (x: number) => number {
  */
 export class Variance {
   readonly buffer: CircularBuffer<number>;
-  readonly kahan: Kahan;
-  private m: number = 0;
-  private m2: number = 0;
+  private m: Kahan = new Kahan();
+  private m2: Kahan = new Kahan();
   private ddof: number;
   private weight: number;
   private varWeight: number;
@@ -160,7 +159,6 @@ export class Variance {
       throw new Error("Period should be larger than DDoF.");
     }
     this.buffer = new CircularBuffer<number>(opts.period);
-    this.kahan = new Kahan();
     this.weight = 1.0 / opts.period;
     this.varWeight = 1.0 / (opts.period - this.ddof);
   }
@@ -173,26 +171,26 @@ export class Variance {
   onData(x: number): { mean: number; variance: number } {
     if (!this.buffer.full()) {
       this.buffer.push(x);
-      const delta = x - this.m;
-      this.m += delta / this.buffer.size();
-      this.m2 = this.kahan.add((x - this.m) * delta);
+      const delta = x - this.m.val;
+      this.m.accum(delta / this.buffer.size());
+      this.m2.accum((x - this.m.val) * delta);
       if (this.buffer.size() <= this.ddof) {
-        return { mean: this.m, variance: 0 };
+        return { mean: this.m.val, variance: 0 };
       } else {
         return {
-          mean: this.m,
-          variance: this.m2 / (this.buffer.size() - this.ddof),
+          mean: this.m.val,
+          variance: this.m2.val / (this.buffer.size() - this.ddof),
         };
       }
     } else {
       const x0 = this.buffer.front()!;
-      const d = x - this.m;
-      const d0 = x0 - this.m;
+      const d = x - this.m.val;
+      const d0 = x0 - this.m.val;
       const dx = x - x0;
-      this.m += this.weight * dx;
-      this.m2 = this.kahan.add(dx * (d + d0) - this.weight * dx * dx);
+      this.m.accum(this.weight * dx);
+      this.m2.accum(dx * (d + d0) - this.weight * dx * dx);
       this.buffer.push(x);
-      return { mean: this.m, variance: this.m2 * this.varWeight };
+      return { mean: this.m.val, variance: this.m2.val * this.varWeight };
     }
   }
 }
@@ -344,11 +342,10 @@ export function useMax(opts: PeriodWith<"period">): (x: number) => number {
  */
 export class Sum {
   readonly buffer: CircularBuffer<number>;
-  private readonly kahan: Kahan;
+  private readonly sum: Kahan = new Kahan();
 
   constructor(opts: PeriodWith<"period">) {
     this.buffer = new CircularBuffer<number>(opts.period);
-    this.kahan = new Kahan();
   }
 
   /**
@@ -359,11 +356,11 @@ export class Sum {
   onData(x: number): number {
     if (!this.buffer.full()) {
       this.buffer.push(x);
-      return this.kahan.add(x);
+      return this.sum.accum(x);
     } else {
       const old = this.buffer.front()!;
       this.buffer.push(x);
-      return this.kahan.add(x - old);
+      return this.sum.accum(x - old);
     }
   }
 }
