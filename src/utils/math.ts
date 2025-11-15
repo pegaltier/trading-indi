@@ -47,7 +47,7 @@ export function smooth_roll(
  * Reduces floating-point rounding errors in sequential addition.
  */
 export class Kahan {
-  private sum: number = 0;
+  sum: number = 0;
   private carry: number = 0;
 
   /**
