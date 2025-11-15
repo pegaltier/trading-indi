@@ -46,7 +46,7 @@ export function smooth_roll(
  * Kahan summation algorithm for numerical stability.
  * Reduces floating-point rounding errors in sequential addition.
  */
-export class kahan {
+export class Kahan {
   private sum: number = 0;
   private carry: number = 0;
 
