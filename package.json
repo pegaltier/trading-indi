@@ -1,7 +1,14 @@
 {
   "name": "trading-indi",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.9.0",
+  "description": "A TypeScript library providing 80+ technical indicators for trading, designed for incremental, stateful calculation perfect for intraday and realtime trading applications",
+  "keywords": [
+    "trading",
+    "algorithmic-trading",
+    "technical-indicators",
+    "real-time",
+    "technical-analysis"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -33,7 +40,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/junduck/trading-indi"
+    "url": "git+https://github.com/junduck/trading-indi.git"
   },
   "bugs": {
     "url": "https://github.com/junduck/trading-indi/issues"
