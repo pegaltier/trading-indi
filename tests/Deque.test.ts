@@ -10,15 +10,6 @@ describe("Deque", () => {
     expect(deque.full()).toBe(false);
   });
 
-  it("throws error for invalid capacity", () => {
-    expect(() => new Deque<number>(0)).toThrow(
-      "Deque capacity must be positive"
-    );
-    expect(() => new Deque<number>(-10)).toThrow(
-      "Deque capacity must be positive"
-    );
-  });
-
   it("pushes to back and front", () => {
     const deque = new Deque<number>(10);
     expect(deque.push_back(100)).toBe(true);

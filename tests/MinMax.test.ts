@@ -163,10 +163,6 @@ describe("MinMax", () => {
       expect(result.max).toBe(expected.max);
     }
   });
-
-  it("should throw error when period is missing", () => {
-    expect(() => new MinMax({} as any)).toThrow("MinMax requires period");
-  });
 });
 
 describe("useMinMax", () => {

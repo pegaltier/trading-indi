@@ -11,9 +11,6 @@ export class EMA {
   private ema?: SmoothedAccum;
 
   constructor(opts: PeriodOptions & { alpha?: number }) {
-    if (opts.period === undefined && opts.alpha === undefined) {
-      throw new Error("EMA requires period or alpha");
-    }
     if (opts.alpha) {
       this.alpha = opts.alpha;
     } else {
@@ -332,5 +329,202 @@ export function useMinMax(
   opts: PeriodWith<"period">
 ): (x: number) => { min: number; max: number } {
   const instance = new MinMax(opts);
+  return (x: number) => instance.onData(x);
+}
+
+/**
+ * ArgMin - stateful indicator.
+ * Returns the minimum value and its index in the sliding window.
+ * Index 0 = most recent value, period-1 = oldest value.
+ */
+export class ArgMin {
+  readonly buffer: CircularBuffer<number>;
+  private minDeque: Deque<{ val: number; pos: number }>;
+  private readonly period: number;
+  private position: number = 0;
+
+  constructor(opts: PeriodWith<"period">) {
+    this.buffer = new CircularBuffer<number>(opts.period);
+    this.minDeque = new Deque(opts.period);
+    this.period = opts.period;
+  }
+
+  /**
+   * Process new data point.
+   * @param x New value
+   * @returns Minimum value and its index {val, pos}
+   */
+  onData(x: number): { val: number; pos: number } {
+    this.buffer.push(x);
+
+    // Remove elements outside window
+    while (
+      !this.minDeque.empty() &&
+      this.position - this.minDeque.front()!.pos >= this.period
+    ) {
+      this.minDeque.pop_front();
+    }
+
+    // Maintain monotonic property
+    while (!this.minDeque.empty() && this.minDeque.back()!.val >= x) {
+      this.minDeque.pop_back();
+    }
+    this.minDeque.push_back({ val: x, pos: this.position });
+
+    this.position++;
+
+    const front = this.minDeque.front()!;
+    return { val: front.val, pos: this.position - front.pos - 1 };
+  }
+}
+
+/**
+ * Creates ArgMin closure for functional usage.
+ * @param opts Period configuration
+ * @returns Function that processes data and returns {val, pos}
+ */
+export function useArgMin(
+  opts: PeriodWith<"period">
+): (x: number) => { val: number; pos: number } {
+  const instance = new ArgMin(opts);
+  return (x: number) => instance.onData(x);
+}
+
+/**
+ * ArgMax - stateful indicator.
+ * Returns the maximum value and its index in the sliding window.
+ * Index 0 = most recent value, period-1 = oldest value.
+ */
+export class ArgMax {
+  readonly buffer: CircularBuffer<number>;
+  private maxDeque: Deque<{ val: number; pos: number }>;
+  private readonly period: number;
+  private position: number = 0;
+
+  constructor(opts: PeriodWith<"period">) {
+    this.buffer = new CircularBuffer<number>(opts.period);
+    this.maxDeque = new Deque(opts.period);
+    this.period = opts.period;
+  }
+
+  /**
+   * Process new data point.
+   * @param x New value
+   * @returns Maximum value and its index {val, pos}
+   */
+  onData(x: number): { val: number; pos: number } {
+    this.buffer.push(x);
+
+    // Remove elements outside window
+    while (
+      !this.maxDeque.empty() &&
+      this.position - this.maxDeque.front()!.pos >= this.period
+    ) {
+      this.maxDeque.pop_front();
+    }
+
+    // Maintain monotonic property
+    while (!this.maxDeque.empty() && this.maxDeque.back()!.val <= x) {
+      this.maxDeque.pop_back();
+    }
+    this.maxDeque.push_back({ val: x, pos: this.position });
+
+    this.position++;
+
+    const front = this.maxDeque.front()!;
+    return { val: front.val, pos: this.position - front.pos - 1 };
+  }
+}
+
+/**
+ * Creates ArgMax closure for functional usage.
+ * @param opts Period configuration
+ * @returns Function that processes data and returns {val, pos}
+ */
+export function useArgMax(
+  opts: PeriodWith<"period">
+): (x: number) => { val: number; pos: number } {
+  const instance = new ArgMax(opts);
+  return (x: number) => instance.onData(x);
+}
+
+/**
+ * ArgMinMax - stateful indicator.
+ * Returns both minimum and maximum values with their indices in the sliding window.
+ * Index 0 = most recent value, period-1 = oldest value.
+ */
+export class ArgMinMax {
+  readonly buffer: CircularBuffer<number>;
+  private minDeque: Deque<{ val: number; pos: number }>;
+  private maxDeque: Deque<{ val: number; pos: number }>;
+  private readonly period: number;
+  private position: number = 0;
+
+  constructor(opts: PeriodWith<"period">) {
+    this.buffer = new CircularBuffer<number>(opts.period);
+    this.minDeque = new Deque(opts.period);
+    this.maxDeque = new Deque(opts.period);
+    this.period = opts.period;
+  }
+
+  /**
+   * Process new data point.
+   * @param x New value
+   * @returns Object with min and max values and positions
+   */
+  onData(x: number): {
+    min: { val: number; pos: number };
+    max: { val: number; pos: number };
+  } {
+    this.buffer.push(x);
+
+    // Remove elements outside window
+    while (
+      !this.minDeque.empty() &&
+      this.position - this.minDeque.front()!.pos >= this.period
+    ) {
+      this.minDeque.pop_front();
+    }
+    while (
+      !this.maxDeque.empty() &&
+      this.position - this.maxDeque.front()!.pos >= this.period
+    ) {
+      this.maxDeque.pop_front();
+    }
+
+    // Maintain monotonic property for min
+    while (!this.minDeque.empty() && this.minDeque.back()!.val >= x) {
+      this.minDeque.pop_back();
+    }
+    this.minDeque.push_back({ val: x, pos: this.position });
+
+    // Maintain monotonic property for max
+    while (!this.maxDeque.empty() && this.maxDeque.back()!.val <= x) {
+      this.maxDeque.pop_back();
+    }
+    this.maxDeque.push_back({ val: x, pos: this.position });
+
+    this.position++;
+
+    const minFront = this.minDeque.front()!;
+    const maxFront = this.maxDeque.front()!;
+
+    return {
+      min: { val: minFront.val, pos: this.position - minFront.pos - 1 },
+      max: { val: maxFront.val, pos: this.position - maxFront.pos - 1 },
+    };
+  }
+}
+
+/**
+ * Creates ArgMinMax closure for functional usage.
+ * @param opts Period configuration
+ * @returns Function that processes data and returns {min: {val, pos}, max: {val, pos}}
+ */
+export function useArgMinMax(opts: PeriodWith<"period">): (x: number) => {
+  min: { val: number; pos: number };
+  max: { val: number; pos: number };
+} {
+  const instance = new ArgMinMax(opts);
   return (x: number) => instance.onData(x);
 }

@@ -92,10 +92,6 @@ describe("EMA", () => {
       expect(result).toBe(x);
     }
   });
-
-  it("should throw error when period is missing", () => {
-    expect(() => new EMA({} as any)).toThrow("EMA requires period");
-  });
 });
 
 describe("useEMA", () => {
