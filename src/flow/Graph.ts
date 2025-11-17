@@ -123,11 +123,6 @@ export class Graph {
   add(name: string, node: Op): this;
   add(name: string, callable: any): OpBuilder;
   add(name: string, nodeOrCallable: any): this | OpBuilder {
-    if (name === this.rootNode) {
-      throw new Error(
-        `Cannot add node with name '${name}': conflicts with root node`
-      );
-    }
     if (nodeOrCallable.__isDagNode) {
       return this.addNode(name, nodeOrCallable);
     }
@@ -136,22 +131,40 @@ export class Graph {
 
   /** @internal */
   addNode(name: string, node: Op): this {
+    if (name === this.rootNode) {
+      throw new Error(
+        `Cannot add node with name '${name}': conflicts with root node`
+      );
+    }
     this.nodes.set(name, node);
 
     const preds: string[] = [];
-    for (const path of node.inputPath) {
-      if (!path) continue;
-      const predName = path.split(".")[0]!;
-      if (!preds.includes(predName)) {
-        preds.push(predName);
-      }
 
-      if (!this.successors.has(predName)) {
-        this.successors.set(predName, []);
+    // Nodes with no inputs (e.g., Const) depend on root to trigger execution
+    if (node.inputPath.length === 0) {
+      preds.push(this.rootNode);
+      if (!this.successors.has(this.rootNode)) {
+        this.successors.set(this.rootNode, []);
       }
-      const succs = this.successors.get(predName)!;
-      if (!succs.includes(name)) {
-        succs.push(name);
+      const rootSuccs = this.successors.get(this.rootNode)!;
+      if (!rootSuccs.includes(name)) {
+        rootSuccs.push(name);
+      }
+    } else {
+      for (const path of node.inputPath) {
+        if (!path) continue;
+        const predName = path.split(".")[0]!;
+        if (!preds.includes(predName)) {
+          preds.push(predName);
+        }
+
+        if (!this.successors.has(predName)) {
+          this.successors.set(predName, []);
+        }
+        const succs = this.successors.get(predName)!;
+        if (!succs.includes(name)) {
+          succs.push(name);
+        }
       }
     }
 
