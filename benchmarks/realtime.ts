@@ -35,9 +35,9 @@ interface Indicator {
 
 const PERIODS = {
   period: 50,
-  period_short: 25,
+  period_fast: 25,
   period_med: 50,
-  period_long: 75,
+  period_slow: 75,
   period_signal: 10,
   k_period: 50,
   k_slowing: 3,
@@ -73,8 +73,8 @@ const tradingStrategies = [
       {
         name: "MACD",
         instance: new MACD({
-          period_short: 12,
-          period_long: 26,
+          period_fast: 12,
+          period_slow: 26,
           period_signal: 9,
         }),
       },
@@ -119,14 +119,14 @@ const tradingStrategies = [
       { name: "MFI", instance: new MFI({ period: 14 }) },
       {
         name: "VOSC",
-        instance: new VOSC({ period_short: 12, period_long: 26 }),
+        instance: new VOSC({ period_fast: 12, period_slow: 26 }),
       },
       { name: "CMF", instance: new CMF({ period: 20 }) },
       {
         name: "PVO",
         instance: new PVO({
-          period_short: 12,
-          period_long: 26,
+          period_fast: 12,
+          period_slow: 26,
           period_signal: 9,
         }),
       },
@@ -145,8 +145,8 @@ const tradingStrategies = [
       {
         name: "MACD",
         instance: new MACD({
-          period_short: 12,
-          period_long: 26,
+          period_fast: 12,
+          period_slow: 26,
           period_signal: 9,
         }),
       },
@@ -267,8 +267,8 @@ function runRealtimeBenchmark() {
     {
       name: "MACD",
       instance: new MACD({
-        period_short: 12,
-        period_long: 26,
+        period_fast: 12,
+        period_slow: 26,
         period_signal: 9,
       }),
     },

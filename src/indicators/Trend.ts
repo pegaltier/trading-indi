@@ -1,23 +1,24 @@
 import type { BarWith } from "../types/BarData.js";
 import type { PeriodWith } from "../types/PeriodOptions.js";
 import { CircularBuffer } from "../fn/Containers.js";
-import { EMA, SMA, Sum } from "../fn/Foundation.js";
+import { ArgMax, ArgMin, EMA, MinMax, Sum } from "../fn/Foundation.js";
 import { ATR, PriceChannel } from "./Volatility.js";
 import { wilders_factor } from "../utils/math.js";
+import { MeanAD } from "../fn/StatsDeviation.js";
 
 /**
  * Aroon Indicator - identifies trend changes and strength.
  * Measures time elapsed since highest high and lowest low.
  */
 export class AROON {
-  private highs: CircularBuffer<number>;
-  private lows: CircularBuffer<number>;
+  private highest: ArgMax;
+  private lowest: ArgMin;
   private period: number;
 
   constructor(opts: PeriodWith<"period">) {
     this.period = opts.period;
-    this.highs = new CircularBuffer(opts.period + 1);
-    this.lows = new CircularBuffer(opts.period + 1);
+    this.highest = new ArgMax(opts);
+    this.lowest = new ArgMin(opts);
   }
 
   /**
@@ -29,36 +30,15 @@ export class AROON {
     up: number;
     down: number;
   } {
-    this.highs.push(bar.high);
-    this.lows.push(bar.low);
+    const highest = this.highest.onData(bar.high);
+    const lowest = this.lowest.onData(bar.low);
 
-    if (!this.highs.full()) {
+    if (!this.highest.buffer.full()) {
       return { up: 0, down: 0 };
     }
 
-    let highIdx = 0;
-    let lowIdx = 0;
-    let highest = this.highs.at(0)!;
-    let lowest = this.lows.at(0)!;
-
-    for (let i = 1; i < this.highs.size(); i++) {
-      const h = this.highs.at(i)!;
-      const l = this.lows.at(i)!;
-      if (h >= highest) {
-        highest = h;
-        highIdx = i;
-      }
-      if (l <= lowest) {
-        lowest = l;
-        lowIdx = i;
-      }
-    }
-
-    const periodsSinceHigh = this.highs.size() - 1 - highIdx;
-    const periodsSinceLow = this.lows.size() - 1 - lowIdx;
-
-    const up = ((this.period - periodsSinceHigh) / this.period) * 100;
-    const down = ((this.period - periodsSinceLow) / this.period) * 100;
+    const up = ((this.period - highest.pos) / this.period) * 100;
+    const down = ((this.period - lowest.pos) / this.period) * 100;
     return { up, down };
   }
 }
@@ -117,12 +97,10 @@ export function useAROONOSC(
  * Calculates (TP - SMA(TP)) / (0.015 * mean_deviation).
  */
 export class CCI {
-  private buffer: CircularBuffer<number>;
-  private sma: SMA;
+  private mad: MeanAD;
 
   constructor(opts: PeriodWith<"period">) {
-    this.buffer = new CircularBuffer(opts.period);
-    this.sma = new SMA(opts);
+    this.mad = new MeanAD(opts);
   }
 
   /**
@@ -132,20 +110,14 @@ export class CCI {
    */
   onData(bar: BarWith<"high" | "low" | "close">): number {
     const tp = (bar.high + bar.low + bar.close) / 3;
-    this.buffer.push(tp);
-    const mean = this.sma.onData(tp);
 
-    if (!this.buffer.full()) {
+    const val = this.mad.onData(tp);
+
+    if (!this.mad.buffer.full()) {
       return 0;
     }
 
-    let md = 0;
-    for (const val of this.buffer) {
-      md += Math.abs(val - mean);
-    }
-    md /= this.buffer.capacity();
-
-    return md !== 0 ? (tp - mean) / (0.015 * md) : 0;
+    return val.mad !== 0 ? (tp - val.mean) / (0.015 * val.mad) : 0;
   }
 }
 
@@ -166,10 +138,13 @@ export function useCCI(
  * Calculates ratio of price range to sum of price changes.
  */
 export class VHF {
-  private buffer: CircularBuffer<number>;
+  private minmax: MinMax;
+  private sum: Sum;
+  private preClose?: number;
 
   constructor(opts: PeriodWith<"period">) {
-    this.buffer = new CircularBuffer(opts.period);
+    this.minmax = new MinMax(opts);
+    this.sum = new Sum(opts);
   }
 
   /**
@@ -178,26 +153,20 @@ export class VHF {
    * @returns VHF value (higher indicates stronger trend)
    */
   onData(bar: BarWith<"close">): number {
-    this.buffer.push(bar.close);
-    if (!this.buffer.full()) {
+    if (this.preClose === undefined) {
+      this.preClose = bar.close;
       return 0;
     }
 
-    let highest = -Infinity;
-    let lowest = Infinity;
-    let sumChanges = 0;
+    const minmax = this.minmax.onData(bar.close);
+    const sum = this.sum.onData(Math.abs(bar.close - this.preClose));
 
-    for (let i = 0; i < this.buffer.size(); i++) {
-      const val = this.buffer.at(i)!;
-      if (val > highest) highest = val;
-      if (val < lowest) lowest = val;
-      if (i > 0) {
-        sumChanges += Math.abs(val - this.buffer.at(i - 1)!);
-      }
+    if (!this.sum.buffer.full()) {
+      return 0;
     }
 
-    const numerator = Math.abs(highest - lowest);
-    return sumChanges !== 0 ? numerator / sumChanges : 0;
+    const numerator = minmax.max - minmax.min;
+    return sum !== 0 ? numerator / sum : 0;
   }
 }
 
@@ -464,7 +433,12 @@ export class SAR {
   private prevPrevLow?: number | undefined; // Added
   private afIncrement: number;
 
-  constructor(opts?: { acceleration?: number; maximum?: number }) {
+  constructor(
+    opts: { acceleration?: number; maximum?: number } = {
+      acceleration: 0.02,
+      maximum: 0.2,
+    }
+  ) {
     this.af = opts?.acceleration ?? 0.02;
     this.afIncrement = opts?.acceleration ?? 0.02;
     this.maxAf = opts?.maximum ?? 0.2;
@@ -644,12 +618,19 @@ export class ICHIMOKU {
   private senkouChannel: PriceChannel;
   private chikouBuffer: CircularBuffer<number>;
 
-  constructor(opts?: {
-    tenkan_period?: number;
-    kijun_period?: number;
-    senkou_b_period?: number;
-    displacement?: number;
-  }) {
+  constructor(
+    opts: {
+      tenkan_period?: number;
+      kijun_period?: number;
+      senkou_b_period?: number;
+      displacement?: number;
+    } = {
+      tenkan_period: 9,
+      kijun_period: 26,
+      senkou_b_period: 52,
+      displacement: 26,
+    }
+  ) {
     const tenkanPeriod = opts?.tenkan_period ?? 9;
     const kijunPeriod = opts?.kijun_period ?? 26;
     const senkouPeriod = opts?.senkou_b_period ?? 52;

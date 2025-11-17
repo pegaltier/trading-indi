@@ -1,4 +1,4 @@
-import { EMA, Max, Min, SMA } from "../fn/Foundation.js";
+import { EMA, Max, Min, SMA, Sum } from "../fn/Foundation.js";
 import { Variance, Stddev } from "../fn/Stats.js";
 import type { BarWith } from "../types/BarData.js";
 import type { PeriodWith } from "../types/PeriodOptions.js";
@@ -97,12 +97,16 @@ export function useCVI(
 export class MASS {
   private ema1: EMA;
   private ema2: EMA;
-  private buffer: CircularBuffer<number>;
+  private sum: Sum;
 
-  constructor(opts: PeriodWith<"period">) {
-    this.ema1 = new EMA({ period: 9 });
-    this.ema2 = new EMA({ period: 9 });
-    this.buffer = new CircularBuffer(opts.period);
+  constructor(
+    opts: PeriodWith<"period"> = {
+      period: 9,
+    }
+  ) {
+    this.ema1 = new EMA(opts);
+    this.ema2 = new EMA(opts);
+    this.sum = new Sum(opts);
   }
 
   /**
@@ -115,16 +119,12 @@ export class MASS {
     const ema1Val = this.ema1.onData(range);
     const ema2Val = this.ema2.onData(ema1Val);
     const ratio = ema2Val !== 0 ? ema1Val / ema2Val : 0;
-    this.buffer.push(ratio);
+    const sum = this.sum.onData(ratio);
 
-    if (!this.buffer.full()) {
+    if (!this.sum.buffer.full()) {
       return 0;
     }
 
-    let sum = 0;
-    for (const val of this.buffer) {
-      sum += val;
-    }
     return sum;
   }
 }

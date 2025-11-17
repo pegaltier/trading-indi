@@ -44,12 +44,12 @@ export function useAD(): (
  */
 export class ADOSC {
   private ad = new AD();
-  private emaShort: EMA;
-  private emaLong: EMA;
+  private emsFast: EMA;
+  private emsSlow: EMA;
 
-  constructor(opts: PeriodWith<"period_short" | "period_long">) {
-    this.emaShort = new EMA({ period: opts.period_short });
-    this.emaLong = new EMA({ period: opts.period_long });
+  constructor(opts: PeriodWith<"period_fast" | "period_slow">) {
+    this.emsFast = new EMA({ period: opts.period_fast });
+    this.emsSlow = new EMA({ period: opts.period_slow });
   }
 
   /**
@@ -59,17 +59,17 @@ export class ADOSC {
    */
   onData(bar: BarWith<"high" | "low" | "close" | "volume">): number {
     const adVal = this.ad.onData(bar);
-    return this.emaShort.onData(adVal) - this.emaLong.onData(adVal);
+    return this.emsFast.onData(adVal) - this.emsSlow.onData(adVal);
   }
 }
 
 /**
  * Creates ADOSC closure for functional usage.
- * @param opts Period configuration (period_short, period_long)
+ * @param opts Period configuration (period_fast, period_slow)
  * @returns Function that processes bar data and returns ADOSC
  */
 export function useADOSC(
-  opts: PeriodWith<"period_short" | "period_long">
+  opts: PeriodWith<"period_fast" | "period_slow">
 ): (bar: BarWith<"high" | "low" | "close" | "volume">) => number {
   const instance = new ADOSC(opts);
   return (bar) => instance.onData(bar);
@@ -80,15 +80,15 @@ export function useADOSC(
  * Combines price movement trends with volume to detect money flow.
  */
 export class KVO {
-  private shortEMA: EMA;
-  private longEMA: EMA;
+  private fastEMA: EMA;
+  private slowEMA: EMA;
   private prevHLC?: number;
   private trend: number = 1;
   private cm: number = 0;
 
-  constructor(opts: PeriodWith<"period_short" | "period_long">) {
-    this.shortEMA = new EMA({ period: opts.period_short });
-    this.longEMA = new EMA({ period: opts.period_long });
+  constructor(opts: PeriodWith<"period_fast" | "period_slow">) {
+    this.fastEMA = new EMA({ period: opts.period_fast });
+    this.slowEMA = new EMA({ period: opts.period_slow });
   }
 
   /**
@@ -123,20 +123,20 @@ export class KVO {
         ? 100 * bar.volume * this.trend * Math.abs((2 * dm) / this.cm - 1)
         : 0;
 
-    const shortVF = this.shortEMA.onData(vf);
-    const longVF = this.longEMA.onData(vf);
+    const fastVF = this.fastEMA.onData(vf);
+    const slowVF = this.slowEMA.onData(vf);
 
-    return shortVF - longVF;
+    return fastVF - slowVF;
   }
 }
 
 /**
  * Creates KVO closure for functional usage.
- * @param opts Period configuration (period_short defaults to 34, period_long to 55)
+ * @param opts Period configuration (period_fast defaults to 34, period_slow to 55)
  * @returns Function that processes bar data and returns KVO
  */
 export function useKVO(
-  opts: PeriodWith<"period_short" | "period_long">
+  opts: PeriodWith<"period_fast" | "period_slow">
 ): (bar: BarWith<"high" | "low" | "close" | "volume">) => number {
   const instance = new KVO(opts);
   return (bar) => instance.onData(bar);
@@ -268,8 +268,10 @@ export function usePVI(): (bar: BarWith<"close" | "volume">) => number {
  * Volume-weighted momentum indicator using typical price.
  */
 export class MFI {
-  private buffer: CircularBuffer<{ mf: number; positive: boolean }>;
+  private buffer: CircularBuffer<number>;
   private prevTypical?: number;
+  private posFlow: number = 0;
+  private negFlow: number = 0;
 
   constructor(opts: PeriodWith<"period">) {
     this.buffer = new CircularBuffer(opts.period);
@@ -282,37 +284,42 @@ export class MFI {
    */
   onData(bar: BarWith<"high" | "low" | "close" | "volume">): number {
     const typical = (bar.high + bar.low + bar.close) / 3;
-    const rawMoney = typical * bar.volume;
+    let moneyFlow = typical * bar.volume;
 
     if (this.prevTypical === undefined) {
       this.prevTypical = typical;
-      this.buffer.push({ mf: rawMoney, positive: true });
+      this.buffer.push(moneyFlow);
       return 50;
     }
 
-    const positive = typical > this.prevTypical;
     this.prevTypical = typical;
-    this.buffer.push({ mf: rawMoney, positive });
+
+    if (typical >= this.prevTypical) {
+      this.posFlow += moneyFlow;
+    } else {
+      this.negFlow += moneyFlow;
+    }
+
+    if (this.buffer.full()) {
+      const expiredMoneyFlow = this.buffer.front()!;
+      if (expiredMoneyFlow >= 0) {
+        this.posFlow -= expiredMoneyFlow;
+      } else {
+        this.negFlow += expiredMoneyFlow;
+      }
+    }
+
+    if (typical >= this.prevTypical) {
+      this.buffer.push(moneyFlow);
+    } else {
+      this.buffer.push(-moneyFlow);
+    }
 
     if (!this.buffer.full()) {
       return 50;
     }
 
-    let posFlow = 0;
-    let negFlow = 0;
-    for (const item of this.buffer) {
-      if (item.positive) {
-        posFlow += item.mf;
-      } else {
-        negFlow += item.mf;
-      }
-    }
-
-    if (negFlow === 0) {
-      return 100;
-    }
-
-    const mfr = posFlow / negFlow;
+    const mfr = this.posFlow / this.negFlow;
     return 100 - 100 / (1 + mfr);
   }
 }
@@ -396,12 +403,12 @@ export function useMarketFI(): (
  * Percentage difference between two volume EMAs.
  */
 export class VOSC {
-  private emaShort: EMA;
-  private emaLong: EMA;
+  private emsFast: EMA;
+  private emsSlow: EMA;
 
-  constructor(opts: PeriodWith<"period_short" | "period_long">) {
-    this.emaShort = new EMA({ period: opts.period_short });
-    this.emaLong = new EMA({ period: opts.period_long });
+  constructor(opts: PeriodWith<"period_fast" | "period_slow">) {
+    this.emsFast = new EMA({ period: opts.period_fast });
+    this.emsSlow = new EMA({ period: opts.period_slow });
   }
 
   /**
@@ -410,21 +417,21 @@ export class VOSC {
    * @returns Current VOSC percentage value
    */
   onData(bar: BarWith<"volume">): number {
-    const emaShortVal = this.emaShort.onData(bar.volume);
-    const emaLongVal = this.emaLong.onData(bar.volume);
-    return emaLongVal !== 0
-      ? ((emaShortVal - emaLongVal) / emaLongVal) * 100
+    const emsFastVal = this.emsFast.onData(bar.volume);
+    const emsSlowVal = this.emsSlow.onData(bar.volume);
+    return emsSlowVal !== 0
+      ? ((emsFastVal - emsSlowVal) / emsSlowVal) * 100
       : 0;
   }
 }
 
 /**
  * Creates VOSC closure for functional usage.
- * @param opts Period configuration (period_short, period_long)
+ * @param opts Period configuration (period_fast, period_slow)
  * @returns Function that processes volume and returns VOSC
  */
 export function useVOSC(
-  opts: PeriodWith<"period_short" | "period_long">
+  opts: PeriodWith<"period_fast" | "period_slow">
 ): (bar: BarWith<"volume">) => number {
   const instance = new VOSC(opts);
   return (bar) => instance.onData(bar);
@@ -480,13 +487,13 @@ export function useCMF(
  */
 export class CHO {
   private ad: AD;
-  private emaShort: EMA;
-  private emaLong: EMA;
+  private emsFast: EMA;
+  private emsSlow: EMA;
 
-  constructor(opts: PeriodWith<"period_short" | "period_long">) {
+  constructor(opts: PeriodWith<"period_fast" | "period_slow">) {
     this.ad = new AD();
-    this.emaShort = new EMA({ period: opts.period_short });
-    this.emaLong = new EMA({ period: opts.period_long });
+    this.emsFast = new EMA({ period: opts.period_fast });
+    this.emsSlow = new EMA({ period: opts.period_slow });
   }
 
   /**
@@ -496,7 +503,7 @@ export class CHO {
    */
   onData(bar: BarWith<"high" | "low" | "close" | "volume">): number {
     const adValue = this.ad.onData(bar);
-    return this.emaShort.onData(adValue) - this.emaLong.onData(adValue);
+    return this.emsFast.onData(adValue) - this.emsSlow.onData(adValue);
   }
 }
 
@@ -506,7 +513,7 @@ export class CHO {
  * @returns Function that processes bar data and returns Chaikin Oscillator
  */
 export function useCHO(
-  opts: PeriodWith<"period_short" | "period_long">
+  opts: PeriodWith<"period_fast" | "period_slow">
 ): (bar: BarWith<"high" | "low" | "close" | "volume">) => number {
   const instance = new CHO(opts);
   return (bar) => instance.onData(bar);
@@ -517,17 +524,17 @@ export function useCHO(
  * Percentage difference between short and long volume EMAs.
  */
 export class PVO {
-  private emaShort: EMA;
-  private emaLong: EMA;
+  private emsFast: EMA;
+  private emsSlow: EMA;
   private emaSignal: EMA;
 
   constructor(
-    opts: PeriodWith<"period_short" | "period_long"> & {
+    opts: PeriodWith<"period_fast" | "period_slow"> & {
       period_signal?: number;
     }
   ) {
-    this.emaShort = new EMA({ period: opts.period_short });
-    this.emaLong = new EMA({ period: opts.period_long });
+    this.emsFast = new EMA({ period: opts.period_fast });
+    this.emsSlow = new EMA({ period: opts.period_slow });
     this.emaSignal = new EMA({ period: opts.period_signal ?? 9 });
   }
 
@@ -541,10 +548,10 @@ export class PVO {
     signal: number;
     histogram: number;
   } {
-    const emaShortVal = this.emaShort.onData(bar.volume);
-    const emaLongVal = this.emaLong.onData(bar.volume);
+    const emsFastVal = this.emsFast.onData(bar.volume);
+    const emsSlowVal = this.emsSlow.onData(bar.volume);
     const pvo =
-      emaLongVal !== 0 ? ((emaShortVal - emaLongVal) / emaLongVal) * 100 : 0;
+      emsSlowVal !== 0 ? ((emsFastVal - emsSlowVal) / emsSlowVal) * 100 : 0;
     const signal = this.emaSignal.onData(pvo);
     const histogram = pvo - signal;
 
@@ -558,7 +565,7 @@ export class PVO {
  * @returns Function that processes bar data and returns PVO
  */
 export function usePVO(
-  opts: PeriodWith<"period_short" | "period_long"> & { period_signal?: number }
+  opts: PeriodWith<"period_fast" | "period_slow"> & { period_signal?: number }
 ): (bar: BarWith<"volume">) => {
   pvo: number;
   signal: number;

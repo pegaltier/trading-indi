@@ -210,6 +210,8 @@ export function useRSI(
  */
 export class CMO {
   private buffer: CircularBuffer<number>;
+  private upSum: number = 0;
+  private downSum: number = 0;
   private prevClose?: number;
 
   constructor(opts: PeriodWith<"period">) {
@@ -229,21 +231,29 @@ export class CMO {
 
     const change = bar.close - this.prevClose;
     this.prevClose = bar.close;
+
+    if (change > 0) {
+      this.upSum += change;
+    } else {
+      this.downSum -= change;
+    }
+
+    if (this.buffer.full()) {
+      const change0 = this.buffer.front()!;
+      if (change0 > 0) {
+        this.upSum -= change0;
+      } else {
+        this.downSum += change0;
+      }
+    }
     this.buffer.push(change);
 
     if (!this.buffer.full()) {
       return 0;
     }
 
-    let upSum = 0;
-    let downSum = 0;
-    for (const val of this.buffer) {
-      if (val > 0) upSum += val;
-      else downSum -= val;
-    }
-
-    const total = upSum + downSum;
-    return total !== 0 ? ((upSum - downSum) / total) * 100 : 0;
+    const total = this.upSum + this.downSum;
+    return total !== 0 ? ((this.upSum - this.downSum) / total) * 100 : 0;
   }
 }
 
@@ -355,27 +365,25 @@ export function useRVI(opts: PeriodWith<"period">): (
  * Double-smoothed momentum oscillator.
  */
 export class TSI {
-  private emaLong1: EMA;
-  private emaShort1: EMA;
-  private emaLong2: EMA;
-  private emaShort2: EMA;
+  private emsSlow1: EMA;
+  private emsFast1: EMA;
+  private emsSlow2: EMA;
+  private emsFast2: EMA;
   private emaSignal: EMA;
   private prevClose?: number;
 
-  constructor(opts?: {
-    long_period?: number;
-    short_period?: number;
-    signal_period?: number;
-  }) {
-    const longPeriod = opts?.long_period ?? 25;
-    const shortPeriod = opts?.short_period ?? 13;
-    const signalPeriod = opts?.signal_period ?? 13;
-
-    this.emaLong1 = new EMA({ period: longPeriod });
-    this.emaShort1 = new EMA({ period: shortPeriod });
-    this.emaLong2 = new EMA({ period: longPeriod });
-    this.emaShort2 = new EMA({ period: shortPeriod });
-    this.emaSignal = new EMA({ period: signalPeriod });
+  constructor(
+    opts: PeriodWith<"period_fast" | "period_slow" | "period_signal"> = {
+      period_fast: 13,
+      period_slow: 25,
+      period_signal: 13,
+    }
+  ) {
+    this.emsSlow1 = new EMA({ period: opts.period_slow });
+    this.emsFast1 = new EMA({ period: opts.period_fast });
+    this.emsSlow2 = new EMA({ period: opts.period_slow });
+    this.emsFast2 = new EMA({ period: opts.period_fast });
+    this.emaSignal = new EMA({ period: opts.period_signal });
   }
 
   /**
@@ -386,22 +394,22 @@ export class TSI {
   onData(bar: BarWith<"close">): { tsi: number; signal: number } {
     if (this.prevClose === undefined) {
       this.prevClose = bar.close;
-      this.emaLong1.onData(0);
-      this.emaShort1.onData(0);
-      this.emaLong2.onData(0);
-      this.emaShort2.onData(0);
+      this.emsSlow1.onData(0);
+      this.emsFast1.onData(0);
+      this.emsSlow2.onData(0);
+      this.emsFast2.onData(0);
       return { tsi: 0, signal: 0 };
     }
 
     const momentum = bar.close - this.prevClose;
     this.prevClose = bar.close;
 
-    const smoothed1 = this.emaLong1.onData(momentum);
-    const doubleSmoothNum = this.emaShort1.onData(smoothed1);
+    const smoothed1 = this.emsSlow1.onData(momentum);
+    const doubleSmoothNum = this.emsFast1.onData(smoothed1);
 
     const absMomentum = Math.abs(momentum);
-    const smoothed2 = this.emaLong2.onData(absMomentum);
-    const doubleSmoothDenom = this.emaShort2.onData(smoothed2);
+    const smoothed2 = this.emsSlow2.onData(absMomentum);
+    const doubleSmoothDenom = this.emsFast2.onData(smoothed2);
 
     const tsi =
       doubleSmoothDenom !== 0 ? (doubleSmoothNum / doubleSmoothDenom) * 100 : 0;
@@ -416,11 +424,13 @@ export class TSI {
  * @param opts Period configuration
  * @returns Function that processes bar data and returns TSI
  */
-export function useTSI(opts?: {
-  long_period?: number;
-  short_period?: number;
-  signal_period?: number;
-}): (bar: BarWith<"close">) => { tsi: number; signal: number } {
+export function useTSI(
+  opts: PeriodWith<"period_fast" | "period_slow" | "period_signal"> = {
+    period_fast: 13,
+    period_slow: 25,
+    period_signal: 13,
+  }
+): (bar: BarWith<"close">) => { tsi: number; signal: number } {
   const instance = new TSI(opts);
   return (bar) => instance.onData(bar);
 }

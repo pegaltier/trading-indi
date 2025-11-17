@@ -1,7 +1,6 @@
 import type { BarWith } from "../types/BarData.js";
 import type { PeriodOptions, PeriodWith } from "../types/PeriodOptions.js";
-import { CircularBuffer } from "../fn/Containers.js";
-import { SMA } from "../fn/Foundation.js";
+import { Max, Min, MinMax, SMA } from "../fn/Foundation.js";
 import { RSI } from "./Momentum.js";
 
 /**
@@ -10,8 +9,8 @@ import { RSI } from "./Momentum.js";
  * Returns smoothed %K and %D lines.
  */
 export class STOCH {
-  private highs: CircularBuffer<number>;
-  private lows: CircularBuffer<number>;
+  private highest: Max;
+  private lowest: Min;
   private smaK: SMA;
   private smaD: SMA;
 
@@ -20,14 +19,18 @@ export class STOCH {
       k_period?: number;
       k_slowing?: number;
       d_period?: number;
+    } = {
+      k_period: 14,
+      k_slowing: 3,
+      d_period: 3,
     }
   ) {
     const kPeriod = opts.k_period ?? opts.period ?? 14;
     const kSlowing = opts.k_slowing ?? 3;
     const dPeriod = opts.d_period ?? 3;
 
-    this.highs = new CircularBuffer(kPeriod);
-    this.lows = new CircularBuffer(kPeriod);
+    this.highest = new Max({ period: kPeriod });
+    this.lowest = new Min({ period: kPeriod });
     this.smaK = new SMA({ period: kSlowing });
     this.smaD = new SMA({ period: dPeriod });
   }
@@ -41,20 +44,11 @@ export class STOCH {
     k: number;
     d: number;
   } {
-    this.highs.push(bar.high);
-    this.lows.push(bar.low);
+    const highest = this.highest.onData(bar.high);
+    const lowest = this.lowest.onData(bar.low);
 
-    if (!this.highs.full()) {
+    if (!this.highest.buffer.full()) {
       return { k: 0, d: 0 };
-    }
-
-    let highest = -Infinity;
-    let lowest = Infinity;
-    for (const h of this.highs) {
-      if (h > highest) highest = h;
-    }
-    for (const l of this.lows) {
-      if (l < lowest) lowest = l;
     }
 
     const range = highest - lowest;
@@ -90,11 +84,11 @@ export function useSTOCH(
  */
 export class STOCHRSI {
   private rsi: RSI;
-  private buffer: CircularBuffer<number>;
+  private minmax: MinMax;
 
   constructor(opts: PeriodWith<"period">) {
     this.rsi = new RSI(opts);
-    this.buffer = new CircularBuffer(opts.period);
+    this.minmax = new MinMax(opts);
   }
 
   /**
@@ -103,22 +97,15 @@ export class STOCHRSI {
    * @returns Current Stochastic RSI value
    */
   onData(bar: BarWith<"close">): number {
-    const rsiVal = this.rsi.onData(bar);
-    this.buffer.push(rsiVal);
+    const rsi = this.rsi.onData(bar);
+    const { min, max } = this.minmax.onData(rsi);
 
-    if (!this.buffer.full()) {
+    if (!this.minmax.buffer.full()) {
       return 0;
     }
 
-    let min = Infinity;
-    let max = -Infinity;
-    for (const val of this.buffer) {
-      if (val < min) min = val;
-      if (val > max) max = val;
-    }
-
     const range = max - min;
-    return range !== 0 ? ((rsiVal - min) / range) * 100 : 0;
+    return range !== 0 ? ((rsi - min) / range) * 100 : 0;
   }
 }
 
@@ -139,12 +126,12 @@ export function useSTOCHRSI(
  * Measures overbought/oversold levels over specified period.
  */
 export class WILLR {
-  private highs: CircularBuffer<number>;
-  private lows: CircularBuffer<number>;
+  private highest: Max;
+  private lowest: Min;
 
   constructor(opts: PeriodWith<"period">) {
-    this.highs = new CircularBuffer(opts.period);
-    this.lows = new CircularBuffer(opts.period);
+    this.highest = new Max(opts);
+    this.lowest = new Min(opts);
   }
 
   /**
@@ -153,20 +140,11 @@ export class WILLR {
    * @returns Current Williams %R value
    */
   onData(bar: BarWith<"high" | "low" | "close">): number {
-    this.highs.push(bar.high);
-    this.lows.push(bar.low);
+    const highest = this.highest.onData(bar.high);
+    const lowest = this.lowest.onData(bar.low);
 
-    if (!this.highs.full()) {
+    if (!this.highest.buffer.full()) {
       return 0;
-    }
-
-    let highest = -Infinity;
-    let lowest = Infinity;
-    for (const h of this.highs) {
-      if (h > highest) highest = h;
-    }
-    for (const l of this.lows) {
-      if (l < lowest) lowest = l;
     }
 
     const range = highest - lowest;

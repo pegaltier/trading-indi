@@ -59,8 +59,8 @@ import { RSI, EMA, MACD, ATR, BBANDS, ADX } from '@junduck/trading-indi';
 const rsi = new RSI({ period: 14 });
 const ema = new EMA({ period: 20 });
 const macd = new MACD({
-  period_short: 12,
-  period_long: 26,
+  period_fast: 12,
+  period_slow: 26,
   period_signal: 9
 });
 const atr = new ATR({ period: 14 });
@@ -88,8 +88,8 @@ import { useRSI, useEMA, useMACD, useATR, useBBANDS, useADX } from '@junduck/tra
 const getRSI = useRSI({ period: 14 });
 const getEMA = useEMA({ period: 20 });
 const getMACD = useMACD({
-  period_short: 12,
-  period_long: 26,
+  period_fast: 12,
+  period_slow: 26,
   period_signal: 9
 });
 const getATR = useATR({ period: 14 });
@@ -169,14 +169,14 @@ for (const bar of historicalData) {
 | Indicator | Parameters | Output |
 |-----------|------------|--------|
 | **AO** | none | `number` |
-| **APO** | `period_short`, `period_long` | `number` |
+| **APO** | `period_fast`, `period_slow` | `number` |
 | **DPO** | `period` | `number` |
 | **Fisher** | `period` | `number` |
-| **MACD** | `period_short`, `period_long`, `period_signal` | `{macd, signal, histogram}` |
-| **PPO** | `period_short`, `period_long` | `number` |
+| **MACD** | `period_fast`, `period_slow`, `period_signal` | `{macd, signal, histogram}` |
+| **PPO** | `period_fast`, `period_slow` | `number` |
 | **QSTICK** | `period` | `number` |
 | **TRIX** | `period` | `number` |
-| **ULTOSC** | `period_short`, `period_med`, `period_long` | `number` |
+| **ULTOSC** | `period_fast`, `period_med`, `period_slow` | `number` |
 
 ### Stochastic
 
@@ -208,18 +208,18 @@ for (const bar of historicalData) {
 | Indicator | Parameters | Output |
 |-----------|------------|--------|
 | **AD** | none | `number` |
-| **ADOSC** | `period_short`, `period_long` | `number` |
-| **KVO** | `period_short?`, `period_long?` | `number` |
+| **ADOSC** | `period_fast`, `period_slow` | `number` |
+| **KVO** | `period_fast?`, `period_slow?` | `number` |
 | **NVI** | none | `number` |
 | **OBV** | none | `number` |
 | **PVI** | none | `number` |
 | **MFI** | `period` | `number` |
 | **EMV** | none | `number` |
 | **MARKETFI** | none | `number` |
-| **VOSC** | `period_short`, `period_long` | `number` |
+| **VOSC** | `period_fast`, `period_slow` | `number` |
 | **CMF** | `period` | `number` |
-| **CHO** | `period_short`, `period_long` | `number` |
-| **PVO** | `period_short`, `period_long`, `period_signal?` | `{pvo, signal, histogram}` |
+| **CHO** | `period_fast`, `period_slow` | `number` |
+| **PVO** | `period_fast`, `period_slow`, `period_signal?` | `{pvo, signal, histogram}` |
 | **FI** | `period` | `number` |
 | **VROC** | `period` | `number` |
 | **PVT** | none | `number` |
@@ -235,7 +235,7 @@ const ema20 = new EMA({ period: 20 });
 const ema50 = new EMA({ period: 50 });
 const bbands = new BBANDS({ period: 20, stddev: 2 });
 const adx = new ADX({ period: 14 });
-const macd = new MACD({ period_short: 12, period_long: 26, period_signal: 9 });
+const macd = new MACD({ period_fast: 12, period_slow: 26, period_signal: 9 });
 const obv = new OBV();
 
 websocket.on('tick', (bar) => {

@@ -1,7 +1,6 @@
 import type { BarData } from "../src/types/BarData.js";
-import { EMA, SMA, Variance, MinMax } from "../src/fn/Foundation.js";
 import {
-  VOLATILITY,
+  Volatility,
   CVI,
   MASS,
   TR,
@@ -59,7 +58,7 @@ import {
   PVI,
   MFI,
   EMV,
-  MARKETFI,
+  MarketFI,
   VOSC,
   CMF,
   CHO,
@@ -97,9 +96,9 @@ interface Indicator {
 
 const PERIODS = {
   period: 50,
-  period_short: 25,
+  period_fast: 25,
   period_med: 50,
-  period_long: 75,
+  period_slow: 75,
   period_signal: 10,
   k_period: 50,
   k_slowing: 3,
@@ -116,12 +115,7 @@ const PERIODS = {
 function createIndicators(): Indicator[] {
   const indicators: Indicator[] = [];
 
-  indicators.push({ name: "EMA", instance: new EMA(PERIODS) });
-  indicators.push({ name: "SMA", instance: new SMA(PERIODS) });
-  indicators.push({ name: "Variance", instance: new Variance(PERIODS) });
-  indicators.push({ name: "MinMax", instance: new MinMax(PERIODS) });
-
-  indicators.push({ name: "VOLATILITY", instance: new VOLATILITY(PERIODS) });
+  indicators.push({ name: "VOLATILITY", instance: new Volatility(PERIODS) });
   indicators.push({ name: "CVI", instance: new CVI(PERIODS) });
   indicators.push({ name: "MASS", instance: new MASS(PERIODS) });
   indicators.push({ name: "TR", instance: new TR() });
@@ -181,7 +175,7 @@ function createIndicators(): Indicator[] {
   indicators.push({ name: "PVI", instance: new PVI() });
   indicators.push({ name: "MFI", instance: new MFI(PERIODS) });
   indicators.push({ name: "EMV", instance: new EMV() });
-  indicators.push({ name: "MARKETFI", instance: new MARKETFI() });
+  indicators.push({ name: "MARKETFI", instance: new MarketFI() });
   indicators.push({ name: "VOSC", instance: new VOSC(PERIODS) });
   indicators.push({ name: "CMF", instance: new CMF(PERIODS) });
   indicators.push({ name: "CHO", instance: new CHO(PERIODS) });

@@ -1,7 +1,6 @@
 import type { BarWith } from "../types/BarData.js";
 import type { PeriodWith } from "../types/PeriodOptions.js";
-import { EMA, MinMax, SMA } from "../fn/Foundation.js";
-import { CircularBuffer } from "../fn/Containers.js";
+import { EMA, MinMax, SMA, Sum } from "../fn/Foundation.js";
 
 /**
  * Awesome Oscillator - stateful indicator.
@@ -36,12 +35,12 @@ export function useAO(): (bar: BarWith<"high" | "low">) => number {
  * Calculates difference between short and long period EMAs.
  */
 export class APO {
-  private emaShort: EMA;
-  private emaLong: EMA;
+  private emsFast: EMA;
+  private emsSlow: EMA;
 
-  constructor(opts: PeriodWith<"period_short" | "period_long">) {
-    this.emaShort = new EMA({ period: opts.period_short });
-    this.emaLong = new EMA({ period: opts.period_long });
+  constructor(opts: PeriodWith<"period_fast" | "period_slow">) {
+    this.emsFast = new EMA({ period: opts.period_fast });
+    this.emsSlow = new EMA({ period: opts.period_slow });
   }
 
   /**
@@ -50,7 +49,7 @@ export class APO {
    * @returns Current APO value
    */
   onData(bar: BarWith<"close">): number {
-    return this.emaShort.onData(bar.close) - this.emaLong.onData(bar.close);
+    return this.emsFast.onData(bar.close) - this.emsSlow.onData(bar.close);
   }
 }
 
@@ -60,7 +59,7 @@ export class APO {
  * @returns Function that processes bar data and returns APO
  */
 export function useAPO(
-  opts: PeriodWith<"period_short" | "period_long">
+  opts: PeriodWith<"period_fast" | "period_slow">
 ): (bar: BarWith<"close">) => number {
   const instance = new APO(opts);
   return (bar) => instance.onData(bar);
@@ -164,15 +163,15 @@ export function useFisher(
  * Trend-following momentum indicator using EMAs.
  */
 export class MACD {
-  private emaShort: EMA;
-  private emaLong: EMA;
+  private emsFast: EMA;
+  private emsSlow: EMA;
   private emaSignal: EMA;
 
   constructor(
-    opts: PeriodWith<"period_short" | "period_long" | "period_signal">
+    opts: PeriodWith<"period_fast" | "period_slow" | "period_signal">
   ) {
-    this.emaShort = new EMA({ period: opts.period_short });
-    this.emaLong = new EMA({ period: opts.period_long });
+    this.emsFast = new EMA({ period: opts.period_fast });
+    this.emsSlow = new EMA({ period: opts.period_slow });
     this.emaSignal = new EMA({ period: opts.period_signal });
   }
 
@@ -187,7 +186,7 @@ export class MACD {
     histogram: number;
   } {
     const macd =
-      this.emaShort.onData(bar.close) - this.emaLong.onData(bar.close);
+      this.emsFast.onData(bar.close) - this.emsSlow.onData(bar.close);
     const signal = this.emaSignal.onData(macd);
     const histogram = macd - signal;
     return { macd, signal, histogram };
@@ -200,7 +199,7 @@ export class MACD {
  * @returns Function that processes bar data and returns MACD values
  */
 export function useMACD(
-  opts: PeriodWith<"period_short" | "period_long" | "period_signal">
+  opts: PeriodWith<"period_fast" | "period_slow" | "period_signal">
 ): (bar: BarWith<"close">) => {
   macd: number;
   signal: number;
@@ -215,12 +214,12 @@ export function useMACD(
  * Calculates percentage difference between short and long period EMAs.
  */
 export class PPO {
-  private emaShort: EMA;
-  private emaLong: EMA;
+  private emsFast: EMA;
+  private emsSlow: EMA;
 
-  constructor(opts: PeriodWith<"period_short" | "period_long">) {
-    this.emaShort = new EMA({ period: opts.period_short });
-    this.emaLong = new EMA({ period: opts.period_long });
+  constructor(opts: PeriodWith<"period_fast" | "period_slow">) {
+    this.emsFast = new EMA({ period: opts.period_fast });
+    this.emsSlow = new EMA({ period: opts.period_slow });
   }
 
   /**
@@ -229,10 +228,10 @@ export class PPO {
    * @returns Current PPO value as percentage
    */
   onData(bar: BarWith<"close">): number {
-    const emaShortVal = this.emaShort.onData(bar.close);
-    const emaLongVal = this.emaLong.onData(bar.close);
-    return emaLongVal !== 0
-      ? ((emaShortVal - emaLongVal) / emaLongVal) * 100
+    const emsFastVal = this.emsFast.onData(bar.close);
+    const emsSlowVal = this.emsSlow.onData(bar.close);
+    return emsSlowVal !== 0
+      ? ((emsFastVal - emsSlowVal) / emsSlowVal) * 100
       : 0;
   }
 }
@@ -243,7 +242,7 @@ export class PPO {
  * @returns Function that processes bar data and returns PPO
  */
 export function usePPO(
-  opts: PeriodWith<"period_short" | "period_long">
+  opts: PeriodWith<"period_fast" | "period_slow">
 ): (bar: BarWith<"close">) => number {
   const instance = new PPO(opts);
   return (bar) => instance.onData(bar);
@@ -338,26 +337,20 @@ export function useTRIX(
  */
 export class ULTOSC {
   private prevClose?: number;
-  private bpShort: CircularBuffer<number>;
-  private bpMed: CircularBuffer<number>;
-  private bpLong: CircularBuffer<number>;
-  private trShort: CircularBuffer<number>;
-  private trMed: CircularBuffer<number>;
-  private trLong: CircularBuffer<number>;
-  private sumBpShort: number = 0;
-  private sumBpMed: number = 0;
-  private sumBpLong: number = 0;
-  private sumTrShort: number = 0;
-  private sumTrMed: number = 0;
-  private sumTrLong: number = 0;
+  private sumBpFast: Sum;
+  private sumBpMed: Sum;
+  private sumBpSlow: Sum;
+  private sumTrFast: Sum;
+  private sumTrMed: Sum;
+  private sumTrSlow: Sum;
 
-  constructor(opts: PeriodWith<"period_short" | "period_med" | "period_long">) {
-    this.bpShort = new CircularBuffer<number>(opts.period_short);
-    this.bpMed = new CircularBuffer<number>(opts.period_med);
-    this.bpLong = new CircularBuffer<number>(opts.period_long);
-    this.trShort = new CircularBuffer<number>(opts.period_short);
-    this.trMed = new CircularBuffer<number>(opts.period_med);
-    this.trLong = new CircularBuffer<number>(opts.period_long);
+  constructor(opts: PeriodWith<"period_fast" | "period_med" | "period_slow">) {
+    this.sumBpFast = new Sum({ period: opts.period_fast });
+    this.sumBpMed = new Sum({ period: opts.period_med });
+    this.sumBpSlow = new Sum({ period: opts.period_slow });
+    this.sumTrFast = new Sum({ period: opts.period_fast });
+    this.sumTrMed = new Sum({ period: opts.period_med });
+    this.sumTrSlow = new Sum({ period: opts.period_slow });
   }
 
   /**
@@ -376,51 +369,20 @@ export class ULTOSC {
     const bp = bar.close - tl;
     const tr = th - tl;
 
-    this.updateBuffer(this.bpShort, bp, (old) => {
-      this.sumBpShort -= old;
-    });
-    this.updateBuffer(this.trShort, tr, (old) => {
-      this.sumTrShort -= old;
-    });
-    this.updateBuffer(this.bpMed, bp, (old) => {
-      this.sumBpMed -= old;
-    });
-    this.updateBuffer(this.trMed, tr, (old) => {
-      this.sumTrMed -= old;
-    });
-    this.updateBuffer(this.bpLong, bp, (old) => {
-      this.sumBpLong -= old;
-    });
-    this.updateBuffer(this.trLong, tr, (old) => {
-      this.sumTrLong -= old;
-    });
-
-    this.sumBpShort += bp;
-    this.sumBpMed += bp;
-    this.sumBpLong += bp;
-    this.sumTrShort += tr;
-    this.sumTrMed += tr;
-    this.sumTrLong += tr;
+    const bpFast = this.sumBpFast.onData(bp);
+    const bpMed = this.sumBpMed.onData(bp);
+    const bpSlow = this.sumBpSlow.onData(bp);
+    const trFast = this.sumTrFast.onData(tr);
+    const trMed = this.sumTrMed.onData(tr);
+    const trSlow = this.sumTrSlow.onData(tr);
 
     this.prevClose = bar.close;
 
-    const avg1 = this.sumTrShort !== 0 ? this.sumBpShort / this.sumTrShort : 0;
-    const avg2 = this.sumTrMed !== 0 ? this.sumBpMed / this.sumTrMed : 0;
-    const avg3 = this.sumTrLong !== 0 ? this.sumBpLong / this.sumTrLong : 0;
+    const avg1 = trFast !== 0 ? bpFast / trFast : 0;
+    const avg2 = trMed !== 0 ? bpMed / trMed : 0;
+    const avg3 = trSlow !== 0 ? bpSlow / trSlow : 0;
 
     return (100 * (4 * avg1 + 2 * avg2 + avg3)) / 7;
-  }
-
-  private updateBuffer(
-    buffer: CircularBuffer<number>,
-    newValue: number,
-    onRemove: (old: number) => void
-  ): void {
-    if (buffer.full()) {
-      const old = buffer.front()!;
-      onRemove(old);
-    }
-    buffer.push(newValue);
   }
 }
 
@@ -430,7 +392,7 @@ export class ULTOSC {
  * @returns Function that processes bar data and returns Ultimate Oscillator
  */
 export function useULTOSC(
-  opts: PeriodWith<"period_short" | "period_med" | "period_long">
+  opts: PeriodWith<"period_fast" | "period_med" | "period_slow">
 ): (bar: BarWith<"high" | "low" | "close">) => number {
   const instance = new ULTOSC(opts);
   return (bar: BarWith<"high" | "low" | "close">) => instance.onData(bar);

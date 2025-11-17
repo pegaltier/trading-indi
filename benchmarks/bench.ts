@@ -30,9 +30,9 @@ interface Indicator {
 
 const PERIODS = {
   period: 50,
-  period_short: 25,
+  period_fast: 25,
   period_med: 50,
-  period_long: 75,
+  period_slow: 75,
   period_signal: 10,
   k_period: 50,
   k_slowing: 3,
