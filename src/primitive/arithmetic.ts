@@ -42,6 +42,7 @@ export class Mul {
 
 export class Div {
   onData(lhs: number, rhs: number): number {
+    if (rhs === 0) return lhs / Number.EPSILON;
     return lhs / rhs;
   }
 
