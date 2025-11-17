@@ -1,6 +1,7 @@
 import type { PeriodWith } from "../types/PeriodOptions.js";
 import type { CircularBuffer } from "./Containers.js";
 import { SMA } from "./Foundation.js";
+import { type OperatorDoc } from "../types/OpDoc.js";
 
 /**
  * Mean Absolute Deviation - stateful indicator.
@@ -33,6 +34,14 @@ export class MeanAD {
 
     return { mean, mad: sum / n };
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "MeanAD",
+    desc: "Mean Absolute Deviation",
+    init: "{period: number}",
+    onDataParam: "x: number",
+    output: "{mean: number, mad: number}",
+  };
 }
 
 /**

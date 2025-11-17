@@ -4,6 +4,7 @@ import type { BarWith } from "../types/BarData.js";
 import type { PeriodWith } from "../types/PeriodOptions.js";
 import { CircularBuffer } from "../fn/Containers.js";
 import { wilders_factor } from "../utils/math.js";
+import { type OperatorDoc } from "../types/OpDoc.js";
 
 /**
  * Historical Volatility - stateful indicator.
@@ -35,6 +36,14 @@ export class Volatility {
     const { variance: variance } = this.variance.onData(logReturn);
     return Math.sqrt(variance * this.annualizedDays) * 100;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "Volatility",
+    desc: "Historical Volatility",
+    init: "{period: number, annualizedDays?: number}",
+    onDataParam: "bar: {close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -77,6 +86,14 @@ export class CVI {
     const old = this.buffer.front()!;
     return old !== 0 ? ((emaVal - old) / old) * 100 : 0;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "CVI",
+    desc: "Chaikin Volatility Index",
+    init: "{period: number}",
+    onDataParam: "bar: {high: number, low: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -127,6 +144,14 @@ export class MASS {
 
     return sum;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "MASS",
+    desc: "Mass Index",
+    init: "{period?: number}",
+    onDataParam: "bar: {high: number, low: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -165,6 +190,13 @@ export class TR {
     this.prevClose = bar.close;
     return tr;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "TR",
+    desc: "True Range",
+    onDataParam: "bar: {high: number, low: number, close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -197,6 +229,14 @@ export class ATR {
     const trValue = this.tr.onData(bar);
     return this.ema.onData(trValue);
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "ATR",
+    desc: "Average True Range",
+    init: "{period: number}",
+    onDataParam: "bar: {high: number, low: number, close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -230,6 +270,14 @@ export class NATR {
     const atrVal = this.atr.onData(bar);
     return bar.close !== 0 ? (atrVal / bar.close) * 100 : 0;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "NATR",
+    desc: "Normalized Average True Range",
+    init: "{period: number}",
+    onDataParam: "bar: {high: number, low: number, close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -272,6 +320,14 @@ export class PriceChannel {
 
     return { upper, lower };
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "PriceChannel",
+    desc: "Price Channel",
+    init: "{period: number}",
+    onDataParam: "bar: {high: number, low: number}",
+    output: "{upper: number, lower: number}",
+  };
 }
 
 /**
@@ -321,6 +377,14 @@ export class BBANDS {
       lower: mean - offset,
     };
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "BBANDS",
+    desc: "Bollinger Bands",
+    init: "{period: number, stddev?: number}",
+    onDataParam: "bar: {close: number}",
+    output: "{upper: number, middle: number, lower: number}",
+  };
 }
 
 /**
@@ -377,6 +441,14 @@ export class KC {
       lower: middle - offset,
     };
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "KC",
+    desc: "Keltner Channels",
+    init: "{period: number, multiplier?: number}",
+    onDataParam: "bar: {high: number, low: number, close: number}",
+    output: "{upper: number, middle: number, lower: number}",
+  };
 }
 
 /**
@@ -428,6 +500,14 @@ export class DC {
       lower: min,
     };
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "DC",
+    desc: "Donchian Channels",
+    init: "{period: number}",
+    onDataParam: "bar: {high: number, low: number}",
+    output: "{upper: number, middle: number, lower: number}",
+  };
 }
 
 /**

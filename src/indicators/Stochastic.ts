@@ -2,6 +2,7 @@ import type { BarWith } from "../types/BarData.js";
 import type { PeriodOptions, PeriodWith } from "../types/PeriodOptions.js";
 import { Max, Min, MinMax, SMA } from "../fn/Foundation.js";
 import { RSI } from "./Momentum.js";
+import { type OperatorDoc } from "../types/OpDoc.js";
 
 /**
  * Stochastic Oscillator - stateful indicator.
@@ -57,6 +58,14 @@ export class STOCH {
     const d = this.smaD.onData(k);
     return { k, d };
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "STOCH",
+    desc: "Stochastic Oscillator",
+    init: "{k_period?: number, k_slowing?: number, d_period?: number}",
+    onDataParam: "bar: {high: number, low: number, close: number}",
+    output: "{k: number, d: number}",
+  };
 }
 
 /**
@@ -107,6 +116,14 @@ export class STOCHRSI {
     const range = max - min;
     return range !== 0 ? ((rsi - min) / range) * 100 : 0;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "STOCHRSI",
+    desc: "Stochastic RSI",
+    init: "{period: number}",
+    onDataParam: "bar: {close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -150,6 +167,14 @@ export class WILLR {
     const range = highest - lowest;
     return range !== 0 ? ((highest - bar.close) / range) * -100 : 0;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "WILLR",
+    desc: "Williams %R",
+    init: "{period: number}",
+    onDataParam: "bar: {high: number, low: number, close: number}",
+    output: "number",
+  };
 }
 
 /**

@@ -5,6 +5,7 @@ import { ArgMax, ArgMin, EMA, MinMax, Sum } from "../fn/Foundation.js";
 import { ATR, PriceChannel } from "./Volatility.js";
 import { wilders_factor } from "../utils/math.js";
 import { MeanAD } from "../fn/StatsDeviation.js";
+import { type OperatorDoc } from "../types/OpDoc.js";
 
 /**
  * Aroon Indicator - identifies trend changes and strength.
@@ -41,6 +42,14 @@ export class AROON {
     const down = ((this.period - lowest.pos) / this.period) * 100;
     return { up, down };
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "AROON",
+    desc: "Aroon Indicator",
+    init: "{period: number}",
+    onDataParam: "bar: {high: number, low: number}",
+    output: "{up: number, down: number}",
+  };
 }
 
 /**
@@ -78,6 +87,14 @@ export class AROONOSC {
     const { up, down } = this.aroon.onData(bar);
     return up - down;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "AROONOSC",
+    desc: "Aroon Oscillator",
+    init: "{period: number}",
+    onDataParam: "bar: {high: number, low: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -119,6 +136,14 @@ export class CCI {
 
     return val.mad !== 0 ? (tp - val.mean) / (0.015 * val.mad) : 0;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "CCI",
+    desc: "Commodity Channel Index",
+    init: "{period: number}",
+    onDataParam: "bar: {high: number, low: number, close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -168,6 +193,14 @@ export class VHF {
     const numerator = minmax.max - minmax.min;
     return sum !== 0 ? numerator / sum : 0;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "VHF",
+    desc: "Vertical Horizontal Filter",
+    init: "{period: number}",
+    onDataParam: "bar: {close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -232,6 +265,14 @@ export class DM {
 
     return { plus, minus };
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "DM",
+    desc: "Directional Movement",
+    init: "{period: number}",
+    onDataParam: "bar: {high: number, low: number}",
+    output: "{plus: number, minus: number}",
+  };
 }
 
 /**
@@ -280,6 +321,14 @@ export class DI {
       minus: (dmValue.minus / atrValue) * 100,
     };
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "DI",
+    desc: "Directional Indicator",
+    init: "{period: number}",
+    onDataParam: "bar: {high: number, low: number, close: number}",
+    output: "{plus: number, minus: number}",
+  };
 }
 
 /**
@@ -324,6 +373,14 @@ export class DX {
     const diff = Math.abs(diValue.plus - diValue.minus);
     return (diff / sum) * 100;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "DX",
+    desc: "Directional Index",
+    init: "{period: number}",
+    onDataParam: "bar: {high: number, low: number, close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -360,6 +417,14 @@ export class ADX {
     const dxValue = this.dx.onData(bar);
     return this.ema.onData(dxValue);
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "ADX",
+    desc: "Average Directional Index",
+    init: "{period: number}",
+    onDataParam: "bar: {high: number, low: number, close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -403,6 +468,14 @@ export class ADXR {
     const oldAdx = this.buffer.front()!;
     return (adxValue + oldAdx) / 2;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "ADXR",
+    desc: "Average Directional Index Rating",
+    init: "{period: number}",
+    onDataParam: "bar: {high: number, low: number, close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -517,6 +590,14 @@ export class SAR {
 
     return this.sar;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "SAR",
+    desc: "Parabolic SAR",
+    init: "{acceleration?: number, maximum?: number}",
+    onDataParam: "bar: {high: number, low: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -591,6 +672,14 @@ export class VI {
       vi_minus: vm_minus_sum / tr_sum,
     };
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "VI",
+    desc: "Vortex Indicator",
+    init: "{period: number}",
+    onDataParam: "bar: {high: number, low: number, close: number}",
+    output: "{vi_plus: number, vi_minus: number}",
+  };
 }
 
 /**
@@ -669,6 +758,15 @@ export class ICHIMOKU {
 
     return { tenkan, kijun, senkou_a, senkou_b, chikou };
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "ICHIMOKU",
+    desc: "Ichimoku Cloud",
+    init: "{tenkan_period?: number, kijun_period?: number, senkou_b_period?: number, displacement?: number}",
+    onDataParam: "bar: {high: number, low: number, close: number}",
+    output:
+      "{tenkan: number, kijun: number, senkou_a: number, senkou_b: number, chikou: number}",
+  };
 }
 
 /**

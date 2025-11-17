@@ -2,6 +2,8 @@ import type { PeriodOptions, PeriodWith } from "../types/PeriodOptions.js";
 import { exp_factor, Kahan, SmoothedAccum } from "../utils/math.js";
 import { CircularBuffer } from "./Containers.js";
 
+import { type OperatorDoc } from "../types/OpDoc.js";
+
 /**
  * Variance - stateful indicator.
  * Uses Welford's online algorithm for numerical stability.
@@ -55,6 +57,14 @@ export class Variance {
       return { mean: this.m.val, variance: this.m2.val * this.varWeight };
     }
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "Variance",
+    desc: "Variance",
+    init: "{period: number, ddof?: number}",
+    onDataParam: "x: number",
+    output: "{mean: number, variance: number}",
+  };
 }
 
 /**
@@ -90,6 +100,14 @@ export class Stddev {
     const { mean, variance } = this.variance.onData(x);
     return { mean, stddev: Math.sqrt(variance) };
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "Stddev",
+    desc: "Standard Deviation",
+    init: "{period: number, ddof?: number}",
+    onDataParam: "x: number",
+    output: "{mean: number, stddev: number}",
+  };
 }
 
 /**
@@ -128,6 +146,14 @@ export class ZScore {
 
     return (x - mean) / stddev;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "ZScore",
+    desc: "Z-Score",
+    init: "{period: number}",
+    onDataParam: "x: number",
+    output: "number",
+  };
 }
 
 /**
@@ -176,6 +202,14 @@ export class VarianceEW {
     this.s2.accum(d * d2, this.alpha);
     return { mean: this.m, variance: this.s2.val };
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "VarianceEW",
+    desc: "Exponentially Weighted Variance",
+    init: "{period?: number, alpha?: number}",
+    onDataParam: "x: number",
+    output: "{mean: number, variance: number}",
+  };
 }
 
 /**
@@ -210,6 +244,14 @@ export class ZScoreEW {
 
     return (x - mean) / Math.sqrt(variance);
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "ZScoreEW",
+    desc: "Exponentially Weighted Z-Score",
+    init: "{period?: number, alpha?: number}",
+    onDataParam: "x: number",
+    output: "number",
+  };
 }
 
 /**
@@ -289,6 +331,14 @@ export class Cov {
       };
     }
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "Cov",
+    desc: "Covariance",
+    init: "{period: number, ddof?: number}",
+    onDataParam: "x: number, y: number",
+    output: "{meanX: number, meanY: number, covariance: number}",
+  };
 }
 
 /**
@@ -416,6 +466,15 @@ export class Corr {
       };
     }
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "Corr",
+    desc: "Correlation",
+    init: "{period: number, ddof?: number}",
+    onDataParam: "x: number, y: number",
+    output:
+      "{meanX: number, meanY: number, covariance: number, correlation: number}",
+  };
 }
 
 /**
@@ -523,6 +582,14 @@ export class Beta {
       return { meanX: this.mx, meanY: this.my, covariance, beta };
     }
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "Beta",
+    desc: "Beta coefficient",
+    init: "{period: number, ddof?: number}",
+    onDataParam: "x: number, y: number",
+    output: "{meanX: number, meanY: number, covariance: number, beta: number}",
+  };
 }
 
 /**

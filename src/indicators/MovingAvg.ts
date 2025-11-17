@@ -1,6 +1,7 @@
 import type { PeriodOptions, PeriodWith } from "../types/PeriodOptions.js";
 import type { BarWith } from "../types/BarData.js";
 import * as fn from "../fn/Foundation.js";
+import { type OperatorDoc } from "../types/OpDoc.js";
 
 /**
  * Simple Moving Average - stateful indicator.
@@ -21,6 +22,14 @@ export class SMA {
   onData(bar: BarWith<"close">): number {
     return this.core.onData(bar.close);
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "SMA",
+    desc: "Simple Moving Average",
+    init: "{period: number}",
+    onDataParam: "bar: {close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -54,6 +63,14 @@ export class EMA {
   onData(bar: BarWith<"close">): number {
     return this.core.onData(bar.close);
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "EMA",
+    desc: "Exponential Moving Average",
+    init: "{period?: number, alpha?: number}",
+    onDataParam: "bar: {close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -87,6 +104,14 @@ export class EWMA {
   onData(bar: BarWith<"close">): number {
     return this.core.onData(bar.close);
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "EWMA",
+    desc: "Exponentially Weighted Moving Average",
+    init: "{period: number}",
+    onDataParam: "bar: {close: number}",
+    output: "number",
+  };
 }
 
 /**

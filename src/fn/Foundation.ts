@@ -2,6 +2,8 @@ import type { PeriodOptions, PeriodWith } from "../types/PeriodOptions.js";
 import { exp_factor, Kahan, SmoothedAccum } from "../utils/math.js";
 import { CircularBuffer, Deque } from "./Containers.js";
 
+import { type OperatorDoc } from "../types/OpDoc.js";
+
 /**
  * Exponential Moving Average - stateful indicator.
  * Uses exponential smoothing with alpha = 2/(period+1).
@@ -31,6 +33,14 @@ export class EMA {
     }
     return this.ema.val;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "EMA",
+    desc: "Exponential Moving Average",
+    init: "{period?: number, alpha?: number}",
+    onDataParam: "x: number",
+    output: "number",
+  };
 }
 
 /**
@@ -83,6 +93,14 @@ export class EWMA {
     }
     return this.s / this.totalWeight.val;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "EWMA",
+    desc: "Exponentially Weighted Moving Average",
+    init: "{period: number}",
+    onDataParam: "x: number",
+    output: "number",
+  };
 }
 
 /**
@@ -125,6 +143,14 @@ export class SMA {
     }
     return this.sma.val;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "SMA",
+    desc: "Simple Moving Average",
+    init: "{period: number}",
+    onDataParam: "x: number",
+    output: "number",
+  };
 }
 
 /**
@@ -172,6 +198,14 @@ export class Min {
 
     return this.minDeque.front()!;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "Min",
+    desc: "Sliding Window Minimum",
+    init: "{period: number}",
+    onDataParam: "x: number",
+    output: "number",
+  };
 }
 
 /**
@@ -219,6 +253,14 @@ export class Max {
 
     return this.maxDeque.front()!;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "Max",
+    desc: "Sliding Window Maximum",
+    init: "{period: number}",
+    onDataParam: "x: number",
+    output: "number",
+  };
 }
 
 /**
@@ -258,6 +300,14 @@ export class Sum {
       return this.sum.accum(x - old);
     }
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "Sum",
+    desc: "Sliding Window Sum",
+    init: "{period: number}",
+    onDataParam: "x: number",
+    output: "number",
+  };
 }
 
 /**
@@ -318,6 +368,14 @@ export class MinMax {
       max: this.maxDeque.front()!,
     };
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "MinMax",
+    desc: "Sliding Window Min/Max",
+    init: "{period: number}",
+    onDataParam: "x: number",
+    output: "{min: number, max: number}",
+  };
 }
 
 /**
@@ -376,6 +434,14 @@ export class ArgMin {
     const front = this.minDeque.front()!;
     return { val: front.val, pos: this.position - front.pos - 1 };
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "ArgMin",
+    desc: "Sliding Window ArgMin",
+    init: "{period: number}",
+    onDataParam: "x: number",
+    output: "{val: number, pos: number}",
+  };
 }
 
 /**
@@ -434,6 +500,14 @@ export class ArgMax {
     const front = this.maxDeque.front()!;
     return { val: front.val, pos: this.position - front.pos - 1 };
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "ArgMax",
+    desc: "Sliding Window ArgMax",
+    init: "{period: number}",
+    onDataParam: "x: number",
+    output: "{val: number, pos: number}",
+  };
 }
 
 /**
@@ -514,6 +588,15 @@ export class ArgMinMax {
       max: { val: maxFront.val, pos: this.position - maxFront.pos - 1 },
     };
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "ArgMinMax",
+    desc: "Sliding Window ArgMin/ArgMax",
+    init: "{period: number}",
+    onDataParam: "x: number",
+    output:
+      "{min: {val: number, pos: number}, max: {val: number, pos: number}}",
+  };
 }
 
 /**

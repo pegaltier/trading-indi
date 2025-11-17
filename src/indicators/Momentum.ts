@@ -4,6 +4,8 @@ import { CircularBuffer } from "../fn/Containers.js";
 import { wilders_factor, SmoothedAccum } from "../utils/math.js";
 import { EMA, SMA } from "../fn/Foundation.js";
 
+import { type OperatorDoc } from "../types/OpDoc.js";
+
 /**
  * Balance of Power - measures buying vs selling pressure.
  * Calculates (close - open) / (high - low) ratio.
@@ -18,6 +20,15 @@ export class BOP {
     const range = bar.high - bar.low;
     return range !== 0 ? (bar.close - bar.open) / range : 0;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "BOP",
+    desc: "Balance of Power - measures buying vs selling pressure.\
+    Calculates (close - open) / (high - low) ratio.",
+    onDataParam:
+      "bar: {open: number, high: number, low: number, close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -54,6 +65,14 @@ export class MOM {
     }
     return bar.close - this.buffer.front()!;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "MOM",
+    desc: "Momentum",
+    init: "{period: number}",
+    onDataParam: "bar: {close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -92,6 +111,14 @@ export class ROC {
     const old = this.buffer.front()!;
     return old !== 0 ? ((bar.close - old) / old) * 100 : 0;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "ROC",
+    desc: "Rate of Change",
+    init: "{period: number}",
+    onDataParam: "bar: {close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -130,6 +157,14 @@ export class ROCR {
     const old = this.buffer.front()!;
     return old !== 0 ? bar.close / old : 1;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "ROCR",
+    desc: "Rate of Change Ratio",
+    init: "{period: number}",
+    onDataParam: "bar: {close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -190,6 +225,14 @@ export class RSI {
     const rs = this.avgGain.val / this.avgLoss!.val;
     return 100 - 100 / (1 + rs);
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "RSI",
+    desc: "Relative Strength Index",
+    init: "{period: number}",
+    onDataParam: "bar: {close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -255,6 +298,14 @@ export class CMO {
     const total = this.upSum + this.downSum;
     return total !== 0 ? ((this.upSum - this.downSum) / total) * 100 : 0;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "CMO",
+    desc: "Chande Momentum Oscillator",
+    init: "{period: number}",
+    onDataParam: "bar: {close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -297,6 +348,13 @@ export class WAD {
     this.prevClose = bar.close;
     return this.wad;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "WAD",
+    desc: "Williams Accumulation/Distribution",
+    onDataParam: "bar: {high: number, low: number, close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -343,6 +401,14 @@ export class RVI {
 
     return { rvi, signal };
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "RVI",
+    desc: "Relative Vigor Index",
+    init: "{period: number}",
+    onDataParam: "bar: {open: number, high: number, low: number, close: number}",
+    output: "{rvi: number, signal: number}",
+  };
 }
 
 /**
@@ -417,6 +483,14 @@ export class TSI {
 
     return { tsi, signal };
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "TSI",
+    desc: "Trend Strength Index",
+    init: "{period_fast?: number, period_slow?: number, period_signal?: number}",
+    onDataParam: "bar: {close: number}",
+    output: "{tsi: number, signal: number}",
+  };
 }
 
 /**
@@ -461,6 +535,14 @@ export class BBPOWER {
       bear_power: bar.low - emaValue,
     };
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "BBPOWER",
+    desc: "Elder's Bull/Bear Power",
+    init: "{period: number}",
+    onDataParam: "bar: {high: number, low: number, close: number}",
+    output: "{bull_power: number, bear_power: number}",
+  };
 }
 
 /**

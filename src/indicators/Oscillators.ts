@@ -1,6 +1,7 @@
 import type { BarWith } from "../types/BarData.js";
 import type { PeriodWith } from "../types/PeriodOptions.js";
 import { EMA, MinMax, SMA, Sum } from "../fn/Foundation.js";
+import { type OperatorDoc } from "../types/OpDoc.js";
 
 /**
  * Awesome Oscillator - stateful indicator.
@@ -19,6 +20,13 @@ export class AO {
     const midpoint = (bar.high + bar.low) / 2;
     return this.smaShort.onData(midpoint) - this.smaLong.onData(midpoint);
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "AO",
+    desc: "Awesome Oscillator",
+    onDataParam: "bar: {high: number, low: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -51,6 +59,14 @@ export class APO {
   onData(bar: BarWith<"close">): number {
     return this.emsFast.onData(bar.close) - this.emsSlow.onData(bar.close);
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "APO",
+    desc: "Absolute Price Oscillator",
+    init: "{period_fast: number, period_slow: number}",
+    onDataParam: "bar: {close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -94,6 +110,14 @@ export class DPO {
       this.sma.buffer.at(this.sma.buffer.size() - this.lookback) ?? bar.close;
     return pastPrice - smaVal;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "DPO",
+    desc: "Detrended Price Oscillator",
+    init: "{period: number}",
+    onDataParam: "bar: {close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -144,6 +168,14 @@ export class Fisher {
 
     return this.fisher;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "Fisher",
+    desc: "Fisher Transform",
+    init: "{period: number}",
+    onDataParam: "bar: {high: number, low: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -191,6 +223,14 @@ export class MACD {
     const histogram = macd - signal;
     return { macd, signal, histogram };
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "MACD",
+    desc: "Moving Average Convergence/Divergence",
+    init: "{period_fast: number, period_slow: number, period_signal: number}",
+    onDataParam: "bar: {close: number}",
+    output: "{macd: number, signal: number, histogram: number}",
+  };
 }
 
 /**
@@ -234,6 +274,14 @@ export class PPO {
       ? ((emsFastVal - emsSlowVal) / emsSlowVal) * 100
       : 0;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "PPO",
+    desc: "Percentage Price Oscillator",
+    init: "{period_fast: number, period_slow: number}",
+    onDataParam: "bar: {close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -268,6 +316,14 @@ export class QSTICK {
     const diff = bar.close - bar.open;
     return this.sma.onData(diff);
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "QSTICK",
+    desc: "Qstick",
+    init: "{period: number}",
+    onDataParam: "bar: {open: number, close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -317,6 +373,14 @@ export class TRIX {
     this.prevEma3 = ema3Val;
     return trix;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "TRIX",
+    desc: "Triple Exponential Moving Average ROC",
+    init: "{period: number}",
+    onDataParam: "bar: {close: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -384,6 +448,14 @@ export class ULTOSC {
 
     return (100 * (4 * avg1 + 2 * avg2 + avg3)) / 7;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "ULTOSC",
+    desc: "Ultimate Oscillator",
+    init: "{period_fast: number, period_med: number, period_slow: number}",
+    onDataParam: "bar: {high: number, low: number, close: number}",
+    output: "number",
+  };
 }
 
 /**

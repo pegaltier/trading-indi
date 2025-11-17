@@ -2,6 +2,7 @@ import type { BarWith } from "../types/BarData.js";
 import type { PeriodWith } from "../types/PeriodOptions.js";
 import { CircularBuffer } from "../fn/Containers.js";
 import { EMA, Sum } from "../fn/Foundation.js";
+import { type OperatorDoc } from "../types/OpDoc.js";
 
 /**
  * Accumulation/Distribution - stateful indicator.
@@ -25,6 +26,13 @@ export class AD {
     this.ad += clv;
     return this.ad;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "AD",
+    desc: "Accumulation/Distribution",
+    onDataParam: "bar: {high: number, low: number, close: number, volume: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -61,6 +69,14 @@ export class ADOSC {
     const adVal = this.ad.onData(bar);
     return this.emsFast.onData(adVal) - this.emsSlow.onData(adVal);
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "ADOSC",
+    desc: "Accumulation/Distribution Oscillator",
+    init: "{period_fast: number, period_slow: number}",
+    onDataParam: "bar: {high: number, low: number, close: number, volume: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -128,6 +144,14 @@ export class KVO {
 
     return fastVF - slowVF;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "KVO",
+    desc: "Klinger Volume Oscillator",
+    init: "{period_fast: number, period_slow: number}",
+    onDataParam: "bar: {high: number, low: number, close: number, volume: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -172,6 +196,13 @@ export class NVI {
     this.prevClose = bar.close;
     return this.nvi;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "NVI",
+    desc: "Negative Volume Index",
+    onDataParam: "bar: {close: number, volume: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -211,6 +242,13 @@ export class OBV {
     this.prevClose = bar.close;
     return this.obv;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "OBV",
+    desc: "On Balance Volume",
+    onDataParam: "bar: {close: number, volume: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -252,6 +290,13 @@ export class PVI {
     this.prevClose = bar.close;
     return this.pvi;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "PVI",
+    desc: "Positive Volume Index",
+    onDataParam: "bar: {close: number, volume: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -322,6 +367,14 @@ export class MFI {
     const mfr = this.posFlow / this.negFlow;
     return 100 - 100 / (1 + mfr);
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "MFI",
+    desc: "Money Flow Index",
+    init: "{period: number}",
+    onDataParam: "bar: {high: number, low: number, close: number, volume: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -361,6 +414,13 @@ export class EMV {
     const boxRatio = bar.volume / 100000000 / (bar.high - bar.low);
     return boxRatio !== 0 ? distance / boxRatio : 0;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "EMV",
+    desc: "Ease of Movement",
+    onDataParam: "bar: {high: number, low: number, volume: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -385,6 +445,13 @@ export class MarketFI {
   onData(bar: BarWith<"high" | "low" | "volume">): number {
     return bar.volume !== 0 ? (bar.high - bar.low) / bar.volume : 0;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "MarketFI",
+    desc: "Market Facilitation Index",
+    onDataParam: "bar: {high: number, low: number, volume: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -423,6 +490,14 @@ export class VOSC {
       ? ((emsFastVal - emsSlowVal) / emsSlowVal) * 100
       : 0;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "VOSC",
+    desc: "Volume Oscillator",
+    init: "{period_fast: number, period_slow: number}",
+    onDataParam: "bar: {volume: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -467,6 +542,14 @@ export class CMF {
 
     return volSum !== 0 ? mfvSum / volSum : 0;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "CMF",
+    desc: "Chaikin Money Flow",
+    init: "{period: number}",
+    onDataParam: "bar: {high: number, low: number, close: number, volume: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -505,6 +588,14 @@ export class CHO {
     const adValue = this.ad.onData(bar);
     return this.emsFast.onData(adValue) - this.emsSlow.onData(adValue);
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "CHO",
+    desc: "Chaikin Oscillator",
+    init: "{period_fast: number, period_slow: number}",
+    onDataParam: "bar: {high: number, low: number, close: number, volume: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -557,6 +648,14 @@ export class PVO {
 
     return { pvo, signal, histogram };
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "PVO",
+    desc: "Percentage Volume Oscillator",
+    init: "{period_fast: number, period_slow: number, period_signal?: number}",
+    onDataParam: "bar: {volume: number}",
+    output: "{pvo: number, signal: number, histogram: number}",
+  };
 }
 
 /**
@@ -602,6 +701,14 @@ export class FI {
     this.prevClose = bar.close;
     return this.ema.onData(force);
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "FI",
+    desc: "Force Index",
+    init: "{period: number}",
+    onDataParam: "bar: {close: number, volume: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -642,6 +749,14 @@ export class VROC {
     const oldVolume = this.buffer.front()!;
     return oldVolume !== 0 ? ((bar.volume - oldVolume) / oldVolume) * 100 : 0;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "VROC",
+    desc: "Volume Rate of Change",
+    init: "{period: number}",
+    onDataParam: "bar: {volume: number}",
+    output: "number",
+  };
 }
 
 /**
@@ -681,6 +796,13 @@ export class PVT {
 
     return this.pvt;
   }
+
+  static readonly doc: OperatorDoc = {
+    type: "PVT",
+    desc: "Price Volume Trend",
+    onDataParam: "bar: {close: number, volume: number}",
+    output: "number",
+  };
 }
 
 /**
