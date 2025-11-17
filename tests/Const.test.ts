@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Graph, OpRegistry, type GraphSchema } from "../src/flow/index.js";
 import { Const } from "../src/primitive/Const.js";
+import { Add, Mul } from "../src/primitive/arithmetic.js";
 
 describe("Const", () => {
   it("should return constant value without input", async () => {
@@ -89,7 +90,7 @@ describe("Const", () => {
   });
 
   it("should work with JSON schema", async () => {
-    const registry = new OpRegistry().register("Const", Const);
+    const registry = new OpRegistry().register(Const);
 
     const descriptor: GraphSchema = {
       root: "tick",
@@ -117,7 +118,7 @@ describe("Const", () => {
   });
 
   it("should work in complex graphs with mixed dependencies", async () => {
-    const registry = new OpRegistry().register("Const", Const);
+    const registry = new OpRegistry().register(Const);
 
     const descriptor: GraphSchema = {
       root: "tick",
@@ -136,7 +137,7 @@ describe("Const", () => {
         },
         {
           name: "scaled",
-          type: "Multiply",
+          type: "Mul",
           onDataSource: ["tick", "multiplier"],
         },
         {
@@ -147,19 +148,7 @@ describe("Const", () => {
       ],
     };
 
-    class Multiply {
-      onData(a: number, b: number): number {
-        return a * b;
-      }
-    }
-
-    class Add {
-      onData(a: number, b: number): number {
-        return a + b;
-      }
-    }
-
-    registry.register("Multiply", Multiply).register("Add", Add);
+    registry.register(Mul).register(Add);
 
     const outputs: any[] = [];
     const g = Graph.fromJSON(descriptor, registry);
