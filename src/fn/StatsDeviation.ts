@@ -39,8 +39,8 @@ export class MeanAD {
     type: "MeanAD",
     desc: "Mean Absolute Deviation",
     init: "{period: number}",
-    onDataParam: "x: number",
-    output: "{mean: number, mad: number}",
+    onDataParam: "x",
+    output: "{mean, mad}",
   };
 }
 

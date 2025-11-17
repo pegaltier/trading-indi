@@ -23,10 +23,7 @@ export class BOP {
 
   static readonly doc: OperatorDoc = {
     type: "BOP",
-    desc: "Balance of Power - measures buying vs selling pressure.\
-    Calculates (close - open) / (high - low) ratio.",
-    onDataParam:
-      "bar: {open: number, high: number, low: number, close: number}",
+    onDataParam: "bar: {open, high, low, close}",
     output: "number",
   };
 }
@@ -68,9 +65,8 @@ export class MOM {
 
   static readonly doc: OperatorDoc = {
     type: "MOM",
-    desc: "Momentum",
     init: "{period: number}",
-    onDataParam: "bar: {close: number}",
+    onDataParam: "bar: {close}",
     output: "number",
   };
 }
@@ -116,7 +112,7 @@ export class ROC {
     type: "ROC",
     desc: "Rate of Change",
     init: "{period: number}",
-    onDataParam: "bar: {close: number}",
+    onDataParam: "bar: {close}",
     output: "number",
   };
 }
@@ -160,9 +156,8 @@ export class ROCR {
 
   static readonly doc: OperatorDoc = {
     type: "ROCR",
-    desc: "Rate of Change Ratio",
     init: "{period: number}",
-    onDataParam: "bar: {close: number}",
+    onDataParam: "bar: {close}",
     output: "number",
   };
 }
@@ -228,9 +223,8 @@ export class RSI {
 
   static readonly doc: OperatorDoc = {
     type: "RSI",
-    desc: "Relative Strength Index",
     init: "{period: number}",
-    onDataParam: "bar: {close: number}",
+    onDataParam: "bar: {close}",
     output: "number",
   };
 }
@@ -301,9 +295,8 @@ export class CMO {
 
   static readonly doc: OperatorDoc = {
     type: "CMO",
-    desc: "Chande Momentum Oscillator",
     init: "{period: number}",
-    onDataParam: "bar: {close: number}",
+    onDataParam: "bar: {close}",
     output: "number",
   };
 }
@@ -351,8 +344,7 @@ export class WAD {
 
   static readonly doc: OperatorDoc = {
     type: "WAD",
-    desc: "Williams Accumulation/Distribution",
-    onDataParam: "bar: {high: number, low: number, close: number}",
+    onDataParam: "bar: {high, low, close}",
     output: "number",
   };
 }
@@ -404,10 +396,9 @@ export class RVI {
 
   static readonly doc: OperatorDoc = {
     type: "RVI",
-    desc: "Relative Vigor Index",
     init: "{period: number}",
-    onDataParam: "bar: {open: number, high: number, low: number, close: number}",
-    output: "{rvi: number, signal: number}",
+    onDataParam: "bar: {open, high, low, close}",
+    output: "{rvi, signal}",
   };
 }
 
@@ -486,10 +477,10 @@ export class TSI {
 
   static readonly doc: OperatorDoc = {
     type: "TSI",
-    desc: "Trend Strength Index",
+    desc: "Trend Strength Index", // Agent: mistakes for True Strength Index
     init: "{period_fast?: number, period_slow?: number, period_signal?: number}",
-    onDataParam: "bar: {close: number}",
-    output: "{tsi: number, signal: number}",
+    onDataParam: "bar: {close}",
+    output: "{tsi, signal}",
   };
 }
 
@@ -538,10 +529,10 @@ export class BBPOWER {
 
   static readonly doc: OperatorDoc = {
     type: "BBPOWER",
-    desc: "Elder's Bull/Bear Power",
+    desc: "Elder's Bull/Bear Power", // Agent: mistakes for Bollinger Bands Power
     init: "{period: number}",
-    onDataParam: "bar: {high: number, low: number, close: number}",
-    output: "{bull_power: number, bear_power: number}",
+    onDataParam: "bar: {high, low, close}",
+    output: "{bull_power, bear_power}",
   };
 }
 

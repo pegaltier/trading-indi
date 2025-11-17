@@ -60,10 +60,9 @@ export class Variance {
 
   static readonly doc: OperatorDoc = {
     type: "Variance",
-    desc: "Variance",
     init: "{period: number, ddof?: number}",
-    onDataParam: "x: number",
-    output: "{mean: number, variance: number}",
+    onDataParam: "x",
+    output: "{mean, variance}",
   };
 }
 
@@ -103,10 +102,9 @@ export class Stddev {
 
   static readonly doc: OperatorDoc = {
     type: "Stddev",
-    desc: "Standard Deviation",
     init: "{period: number, ddof?: number}",
-    onDataParam: "x: number",
-    output: "{mean: number, stddev: number}",
+    onDataParam: "x",
+    output: "{mean, stddev}",
   };
 }
 
@@ -149,9 +147,8 @@ export class ZScore {
 
   static readonly doc: OperatorDoc = {
     type: "ZScore",
-    desc: "Z-Score",
     init: "{period: number}",
-    onDataParam: "x: number",
+    onDataParam: "x",
     output: "number",
   };
 }
@@ -207,8 +204,8 @@ export class VarianceEW {
     type: "VarianceEW",
     desc: "Exponentially Weighted Variance",
     init: "{period?: number, alpha?: number}",
-    onDataParam: "x: number",
-    output: "{mean: number, variance: number}",
+    onDataParam: "x",
+    output: "{mean, variance}",
   };
 }
 
@@ -249,7 +246,7 @@ export class ZScoreEW {
     type: "ZScoreEW",
     desc: "Exponentially Weighted Z-Score",
     init: "{period?: number, alpha?: number}",
-    onDataParam: "x: number",
+    onDataParam: "x",
     output: "number",
   };
 }
@@ -334,10 +331,9 @@ export class Cov {
 
   static readonly doc: OperatorDoc = {
     type: "Cov",
-    desc: "Covariance",
     init: "{period: number, ddof?: number}",
-    onDataParam: "x: number, y: number",
-    output: "{meanX: number, meanY: number, covariance: number}",
+    onDataParam: "x, y",
+    output: "{meanX, meanY, covariance}",
   };
 }
 
@@ -469,11 +465,9 @@ export class Corr {
 
   static readonly doc: OperatorDoc = {
     type: "Corr",
-    desc: "Correlation",
     init: "{period: number, ddof?: number}",
-    onDataParam: "x: number, y: number",
-    output:
-      "{meanX: number, meanY: number, covariance: number, correlation: number}",
+    onDataParam: "x, y",
+    output: "{meanX, meanY, covariance, correlation}",
   };
 }
 
@@ -585,10 +579,9 @@ export class Beta {
 
   static readonly doc: OperatorDoc = {
     type: "Beta",
-    desc: "Beta coefficient",
     init: "{period: number, ddof?: number}",
-    onDataParam: "x: number, y: number",
-    output: "{meanX: number, meanY: number, covariance: number, beta: number}",
+    onDataParam: "x, y",
+    output: "{meanX, meanY, covariance, beta}",
   };
 }
 

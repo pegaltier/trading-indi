@@ -8,3 +8,5 @@ export interface OperatorDoc {
   onDataParam: string; // onData's parameters
   output: string; // What it produces
 }
+
+// TODO: reduce detailed desc, improve non-English agent context

@@ -29,8 +29,7 @@ export class AD {
 
   static readonly doc: OperatorDoc = {
     type: "AD",
-    desc: "Accumulation/Distribution",
-    onDataParam: "bar: {high: number, low: number, close: number, volume: number}",
+    onDataParam: "bar: {high, low, close, volume}",
     output: "number",
   };
 }
@@ -72,9 +71,8 @@ export class ADOSC {
 
   static readonly doc: OperatorDoc = {
     type: "ADOSC",
-    desc: "Accumulation/Distribution Oscillator",
-    init: "{period_fast: number, period_slow: number}",
-    onDataParam: "bar: {high: number, low: number, close: number, volume: number}",
+    init: "{period_fast, period_slow}",
+    onDataParam: "bar: {high, low, close, volume}",
     output: "number",
   };
 }
@@ -147,9 +145,8 @@ export class KVO {
 
   static readonly doc: OperatorDoc = {
     type: "KVO",
-    desc: "Klinger Volume Oscillator",
-    init: "{period_fast: number, period_slow: number}",
-    onDataParam: "bar: {high: number, low: number, close: number, volume: number}",
+    init: "{period_fast, period_slow}",
+    onDataParam: "bar: {high, low, close, volume}",
     output: "number",
   };
 }
@@ -199,8 +196,7 @@ export class NVI {
 
   static readonly doc: OperatorDoc = {
     type: "NVI",
-    desc: "Negative Volume Index",
-    onDataParam: "bar: {close: number, volume: number}",
+    onDataParam: "bar: {close, volume}",
     output: "number",
   };
 }
@@ -245,8 +241,7 @@ export class OBV {
 
   static readonly doc: OperatorDoc = {
     type: "OBV",
-    desc: "On Balance Volume",
-    onDataParam: "bar: {close: number, volume: number}",
+    onDataParam: "bar: {close, volume}",
     output: "number",
   };
 }
@@ -293,8 +288,7 @@ export class PVI {
 
   static readonly doc: OperatorDoc = {
     type: "PVI",
-    desc: "Positive Volume Index",
-    onDataParam: "bar: {close: number, volume: number}",
+    onDataParam: "bar: {close, volume}",
     output: "number",
   };
 }
@@ -370,9 +364,8 @@ export class MFI {
 
   static readonly doc: OperatorDoc = {
     type: "MFI",
-    desc: "Money Flow Index",
     init: "{period: number}",
-    onDataParam: "bar: {high: number, low: number, close: number, volume: number}",
+    onDataParam: "bar: {high, low, close, volume}",
     output: "number",
   };
 }
@@ -417,8 +410,7 @@ export class EMV {
 
   static readonly doc: OperatorDoc = {
     type: "EMV",
-    desc: "Ease of Movement",
-    onDataParam: "bar: {high: number, low: number, volume: number}",
+    onDataParam: "bar: {high, low, volume}",
     output: "number",
   };
 }
@@ -448,8 +440,8 @@ export class MarketFI {
 
   static readonly doc: OperatorDoc = {
     type: "MarketFI",
-    desc: "Market Facilitation Index",
-    onDataParam: "bar: {high: number, low: number, volume: number}",
+    desc: "Market Facilitation Index", // Agent: mistakes for Market Finance Index
+    onDataParam: "bar: {high, low, volume}",
     output: "number",
   };
 }
@@ -493,9 +485,8 @@ export class VOSC {
 
   static readonly doc: OperatorDoc = {
     type: "VOSC",
-    desc: "Volume Oscillator",
-    init: "{period_fast: number, period_slow: number}",
-    onDataParam: "bar: {volume: number}",
+    init: "{period_fast, period_slow}",
+    onDataParam: "bar: {volume}",
     output: "number",
   };
 }
@@ -545,9 +536,8 @@ export class CMF {
 
   static readonly doc: OperatorDoc = {
     type: "CMF",
-    desc: "Chaikin Money Flow",
     init: "{period: number}",
-    onDataParam: "bar: {high: number, low: number, close: number, volume: number}",
+    onDataParam: "bar: {high, low, close, volume}",
     output: "number",
   };
 }
@@ -591,9 +581,8 @@ export class CHO {
 
   static readonly doc: OperatorDoc = {
     type: "CHO",
-    desc: "Chaikin Oscillator",
-    init: "{period_fast: number, period_slow: number}",
-    onDataParam: "bar: {high: number, low: number, close: number, volume: number}",
+    init: "{period_fast, period_slow}",
+    onDataParam: "bar: {high, low, close, volume}",
     output: "number",
   };
 }
@@ -651,10 +640,9 @@ export class PVO {
 
   static readonly doc: OperatorDoc = {
     type: "PVO",
-    desc: "Percentage Volume Oscillator",
-    init: "{period_fast: number, period_slow: number, period_signal?: number}",
-    onDataParam: "bar: {volume: number}",
-    output: "{pvo: number, signal: number, histogram: number}",
+    init: "{period_fast, period_slow, period_signal?}",
+    onDataParam: "bar: {volume}",
+    output: "{pvo, signal, histogram}",
   };
 }
 
@@ -704,9 +692,8 @@ export class FI {
 
   static readonly doc: OperatorDoc = {
     type: "FI",
-    desc: "Force Index",
     init: "{period: number}",
-    onDataParam: "bar: {close: number, volume: number}",
+    onDataParam: "bar: {close, volume}",
     output: "number",
   };
 }
@@ -752,9 +739,8 @@ export class VROC {
 
   static readonly doc: OperatorDoc = {
     type: "VROC",
-    desc: "Volume Rate of Change",
     init: "{period: number}",
-    onDataParam: "bar: {volume: number}",
+    onDataParam: "bar: {volume}",
     output: "number",
   };
 }
@@ -799,8 +785,7 @@ export class PVT {
 
   static readonly doc: OperatorDoc = {
     type: "PVT",
-    desc: "Price Volume Trend",
-    onDataParam: "bar: {close: number, volume: number}",
+    onDataParam: "bar: {close, volume}",
     output: "number",
   };
 }

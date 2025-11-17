@@ -61,10 +61,9 @@ export class STOCH {
 
   static readonly doc: OperatorDoc = {
     type: "STOCH",
-    desc: "Stochastic Oscillator",
-    init: "{k_period?: number, k_slowing?: number, d_period?: number}",
-    onDataParam: "bar: {high: number, low: number, close: number}",
-    output: "{k: number, d: number}",
+    init: "{k_period?, k_slowing?, d_period?}",
+    onDataParam: "bar: {high, low, close}",
+    output: "{k, d}",
   };
 }
 
@@ -119,9 +118,8 @@ export class STOCHRSI {
 
   static readonly doc: OperatorDoc = {
     type: "STOCHRSI",
-    desc: "Stochastic RSI",
     init: "{period: number}",
-    onDataParam: "bar: {close: number}",
+    onDataParam: "bar: {close}",
     output: "number",
   };
 }
@@ -172,7 +170,7 @@ export class WILLR {
     type: "WILLR",
     desc: "Williams %R",
     init: "{period: number}",
-    onDataParam: "bar: {high: number, low: number, close: number}",
+    onDataParam: "bar: {high, low, close}",
     output: "number",
   };
 }

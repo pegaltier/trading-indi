@@ -3,6 +3,8 @@ import type { BarWith } from "../types/BarData.js";
 import * as fn from "../fn/Foundation.js";
 import { type OperatorDoc } from "../types/OpDoc.js";
 
+// TODO: For agent use we should only register fn/Foundations equivalent
+
 /**
  * Simple Moving Average - stateful indicator.
  * Calculates arithmetic mean of close prices over period.
@@ -25,9 +27,8 @@ export class SMA {
 
   static readonly doc: OperatorDoc = {
     type: "SMA",
-    desc: "Simple Moving Average",
     init: "{period: number}",
-    onDataParam: "bar: {close: number}",
+    onDataParam: "bar: {close}",
     output: "number",
   };
 }
@@ -66,9 +67,8 @@ export class EMA {
 
   static readonly doc: OperatorDoc = {
     type: "EMA",
-    desc: "Exponential Moving Average",
     init: "{period?: number, alpha?: number}",
-    onDataParam: "bar: {close: number}",
+    onDataParam: "bar: {close}",
     output: "number",
   };
 }
@@ -107,9 +107,8 @@ export class EWMA {
 
   static readonly doc: OperatorDoc = {
     type: "EWMA",
-    desc: "Exponentially Weighted Moving Average",
     init: "{period: number}",
-    onDataParam: "bar: {close: number}",
+    onDataParam: "bar: {close}",
     output: "number",
   };
 }

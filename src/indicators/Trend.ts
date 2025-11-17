@@ -45,10 +45,9 @@ export class AROON {
 
   static readonly doc: OperatorDoc = {
     type: "AROON",
-    desc: "Aroon Indicator",
     init: "{period: number}",
-    onDataParam: "bar: {high: number, low: number}",
-    output: "{up: number, down: number}",
+    onDataParam: "bar: {high, low}",
+    output: "{up, down}",
   };
 }
 
@@ -90,9 +89,8 @@ export class AROONOSC {
 
   static readonly doc: OperatorDoc = {
     type: "AROONOSC",
-    desc: "Aroon Oscillator",
     init: "{period: number}",
-    onDataParam: "bar: {high: number, low: number}",
+    onDataParam: "bar: {high, low}",
     output: "number",
   };
 }
@@ -139,9 +137,8 @@ export class CCI {
 
   static readonly doc: OperatorDoc = {
     type: "CCI",
-    desc: "Commodity Channel Index",
     init: "{period: number}",
-    onDataParam: "bar: {high: number, low: number, close: number}",
+    onDataParam: "bar: {high, low, close}",
     output: "number",
   };
 }
@@ -196,9 +193,8 @@ export class VHF {
 
   static readonly doc: OperatorDoc = {
     type: "VHF",
-    desc: "Vertical Horizontal Filter",
     init: "{period: number}",
-    onDataParam: "bar: {close: number}",
+    onDataParam: "bar: {close}",
     output: "number",
   };
 }
@@ -268,10 +264,9 @@ export class DM {
 
   static readonly doc: OperatorDoc = {
     type: "DM",
-    desc: "Directional Movement",
     init: "{period: number}",
-    onDataParam: "bar: {high: number, low: number}",
-    output: "{plus: number, minus: number}",
+    onDataParam: "bar: {high, low}",
+    output: "{plus, minus}",
   };
 }
 
@@ -324,10 +319,9 @@ export class DI {
 
   static readonly doc: OperatorDoc = {
     type: "DI",
-    desc: "Directional Indicator",
     init: "{period: number}",
-    onDataParam: "bar: {high: number, low: number, close: number}",
-    output: "{plus: number, minus: number}",
+    onDataParam: "bar: {high, low, close}",
+    output: "{plus, minus}",
   };
 }
 
@@ -376,9 +370,8 @@ export class DX {
 
   static readonly doc: OperatorDoc = {
     type: "DX",
-    desc: "Directional Index",
     init: "{period: number}",
-    onDataParam: "bar: {high: number, low: number, close: number}",
+    onDataParam: "bar: {high, low, close}",
     output: "number",
   };
 }
@@ -420,9 +413,8 @@ export class ADX {
 
   static readonly doc: OperatorDoc = {
     type: "ADX",
-    desc: "Average Directional Index",
     init: "{period: number}",
-    onDataParam: "bar: {high: number, low: number, close: number}",
+    onDataParam: "bar: {high, low, close}",
     output: "number",
   };
 }
@@ -471,9 +463,8 @@ export class ADXR {
 
   static readonly doc: OperatorDoc = {
     type: "ADXR",
-    desc: "Average Directional Index Rating",
     init: "{period: number}",
-    onDataParam: "bar: {high: number, low: number, close: number}",
+    onDataParam: "bar: {high, low, close}",
     output: "number",
   };
 }
@@ -593,9 +584,8 @@ export class SAR {
 
   static readonly doc: OperatorDoc = {
     type: "SAR",
-    desc: "Parabolic SAR",
-    init: "{acceleration?: number, maximum?: number}",
-    onDataParam: "bar: {high: number, low: number}",
+    init: "{acceleration?, maximum?}",
+    onDataParam: "bar: {high, low}",
     output: "number",
   };
 }
@@ -675,10 +665,9 @@ export class VI {
 
   static readonly doc: OperatorDoc = {
     type: "VI",
-    desc: "Vortex Indicator",
     init: "{period: number}",
-    onDataParam: "bar: {high: number, low: number, close: number}",
-    output: "{vi_plus: number, vi_minus: number}",
+    onDataParam: "bar: {high, low, close}",
+    output: "{vi_plus, vi_minus}",
   };
 }
 
@@ -761,11 +750,9 @@ export class ICHIMOKU {
 
   static readonly doc: OperatorDoc = {
     type: "ICHIMOKU",
-    desc: "Ichimoku Cloud",
-    init: "{tenkan_period?: number, kijun_period?: number, senkou_b_period?: number, displacement?: number}",
-    onDataParam: "bar: {high: number, low: number, close: number}",
-    output:
-      "{tenkan: number, kijun: number, senkou_a: number, senkou_b: number, chikou: number}",
+    init: "{tenkan_period?, kijun_period?, senkou_b_period?, displacement?}",
+    onDataParam: "bar: {high, low, close}",
+    output: "{tenkan, kijun, senkou_a, senkou_b, chikou}",
   };
 }
 

@@ -39,9 +39,8 @@ export class Volatility {
 
   static readonly doc: OperatorDoc = {
     type: "Volatility",
-    desc: "Historical Volatility",
-    init: "{period: number, annualizedDays?: number}",
-    onDataParam: "bar: {close: number}",
+    init: "{period, annualizedDays?}",
+    onDataParam: "bar: {close}",
     output: "number",
   };
 }
@@ -89,9 +88,8 @@ export class CVI {
 
   static readonly doc: OperatorDoc = {
     type: "CVI",
-    desc: "Chaikin Volatility Index",
     init: "{period: number}",
-    onDataParam: "bar: {high: number, low: number}",
+    onDataParam: "bar: {high, low}",
     output: "number",
   };
 }
@@ -147,9 +145,8 @@ export class MASS {
 
   static readonly doc: OperatorDoc = {
     type: "MASS",
-    desc: "Mass Index",
     init: "{period?: number}",
-    onDataParam: "bar: {high: number, low: number}",
+    onDataParam: "bar: {high, low}",
     output: "number",
   };
 }
@@ -193,8 +190,7 @@ export class TR {
 
   static readonly doc: OperatorDoc = {
     type: "TR",
-    desc: "True Range",
-    onDataParam: "bar: {high: number, low: number, close: number}",
+    onDataParam: "bar: {high, low, close}",
     output: "number",
   };
 }
@@ -232,9 +228,8 @@ export class ATR {
 
   static readonly doc: OperatorDoc = {
     type: "ATR",
-    desc: "Average True Range",
     init: "{period: number}",
-    onDataParam: "bar: {high: number, low: number, close: number}",
+    onDataParam: "bar: {high, low, close}",
     output: "number",
   };
 }
@@ -273,9 +268,8 @@ export class NATR {
 
   static readonly doc: OperatorDoc = {
     type: "NATR",
-    desc: "Normalized Average True Range",
     init: "{period: number}",
-    onDataParam: "bar: {high: number, low: number, close: number}",
+    onDataParam: "bar: {high, low, close}",
     output: "number",
   };
 }
@@ -323,10 +317,9 @@ export class PriceChannel {
 
   static readonly doc: OperatorDoc = {
     type: "PriceChannel",
-    desc: "Price Channel",
     init: "{period: number}",
-    onDataParam: "bar: {high: number, low: number}",
-    output: "{upper: number, lower: number}",
+    onDataParam: "bar: {high, low}",
+    output: "{upper, lower}",
   };
 }
 
@@ -353,9 +346,9 @@ export class BBANDS {
   private std: Stddev;
   private multiplier: number;
 
-  constructor(opts: PeriodWith<"period"> & { stddev?: number }) {
+  constructor(opts: PeriodWith<"period"> & { Nstddev?: number }) {
     this.std = new Stddev({ period: opts.period, ddof: 1 });
-    this.multiplier = opts.stddev ?? 2;
+    this.multiplier = opts.Nstddev ?? 2;
   }
 
   /**
@@ -380,10 +373,9 @@ export class BBANDS {
 
   static readonly doc: OperatorDoc = {
     type: "BBANDS",
-    desc: "Bollinger Bands",
-    init: "{period: number, stddev?: number}",
-    onDataParam: "bar: {close: number}",
-    output: "{upper: number, middle: number, lower: number}",
+    init: "{period, Nstddev?}",
+    onDataParam: "bar: {close}",
+    output: "{upper, middle, lower}",
   };
 }
 
@@ -444,10 +436,9 @@ export class KC {
 
   static readonly doc: OperatorDoc = {
     type: "KC",
-    desc: "Keltner Channels",
-    init: "{period: number, multiplier?: number}",
-    onDataParam: "bar: {high: number, low: number, close: number}",
-    output: "{upper: number, middle: number, lower: number}",
+    init: "{period, multiplier?}",
+    onDataParam: "bar: {high, low, close}",
+    output: "{upper, middle, lower}",
   };
 }
 
@@ -503,10 +494,9 @@ export class DC {
 
   static readonly doc: OperatorDoc = {
     type: "DC",
-    desc: "Donchian Channels",
     init: "{period: number}",
-    onDataParam: "bar: {high: number, low: number}",
-    output: "{upper: number, middle: number, lower: number}",
+    onDataParam: "bar: {high, low}",
+    output: "{upper, middle, lower}",
   };
 }
 

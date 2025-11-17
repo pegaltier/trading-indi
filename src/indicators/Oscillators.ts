@@ -23,8 +23,7 @@ export class AO {
 
   static readonly doc: OperatorDoc = {
     type: "AO",
-    desc: "Awesome Oscillator",
-    onDataParam: "bar: {high: number, low: number}",
+    onDataParam: "bar: {high, low}",
     output: "number",
   };
 }
@@ -62,9 +61,8 @@ export class APO {
 
   static readonly doc: OperatorDoc = {
     type: "APO",
-    desc: "Absolute Price Oscillator",
-    init: "{period_fast: number, period_slow: number}",
-    onDataParam: "bar: {close: number}",
+    init: "{period_fast, period_slow}",
+    onDataParam: "bar: {close}",
     output: "number",
   };
 }
@@ -113,9 +111,8 @@ export class DPO {
 
   static readonly doc: OperatorDoc = {
     type: "DPO",
-    desc: "Detrended Price Oscillator",
     init: "{period: number}",
-    onDataParam: "bar: {close: number}",
+    onDataParam: "bar: {close}",
     output: "number",
   };
 }
@@ -171,9 +168,8 @@ export class Fisher {
 
   static readonly doc: OperatorDoc = {
     type: "Fisher",
-    desc: "Fisher Transform",
     init: "{period: number}",
-    onDataParam: "bar: {high: number, low: number}",
+    onDataParam: "bar: {high, low}",
     output: "number",
   };
 }
@@ -226,10 +222,9 @@ export class MACD {
 
   static readonly doc: OperatorDoc = {
     type: "MACD",
-    desc: "Moving Average Convergence/Divergence",
-    init: "{period_fast: number, period_slow: number, period_signal: number}",
-    onDataParam: "bar: {close: number}",
-    output: "{macd: number, signal: number, histogram: number}",
+    init: "{period_fast, period_slow, period_signal}",
+    onDataParam: "bar: {close}",
+    output: "{macd, signal, histogram}",
   };
 }
 
@@ -277,9 +272,8 @@ export class PPO {
 
   static readonly doc: OperatorDoc = {
     type: "PPO",
-    desc: "Percentage Price Oscillator",
-    init: "{period_fast: number, period_slow: number}",
-    onDataParam: "bar: {close: number}",
+    init: "{period_fast, period_slow}",
+    onDataParam: "bar: {close}",
     output: "number",
   };
 }
@@ -319,9 +313,8 @@ export class QSTICK {
 
   static readonly doc: OperatorDoc = {
     type: "QSTICK",
-    desc: "Qstick",
     init: "{period: number}",
-    onDataParam: "bar: {open: number, close: number}",
+    onDataParam: "bar: {open, close}",
     output: "number",
   };
 }
@@ -376,9 +369,8 @@ export class TRIX {
 
   static readonly doc: OperatorDoc = {
     type: "TRIX",
-    desc: "Triple Exponential Moving Average ROC",
     init: "{period: number}",
-    onDataParam: "bar: {close: number}",
+    onDataParam: "bar: {close}",
     output: "number",
   };
 }
@@ -451,9 +443,8 @@ export class ULTOSC {
 
   static readonly doc: OperatorDoc = {
     type: "ULTOSC",
-    desc: "Ultimate Oscillator",
-    init: "{period_fast: number, period_med: number, period_slow: number}",
-    onDataParam: "bar: {high: number, low: number, close: number}",
+    init: "{period_fast, period_med, period_slow}",
+    onDataParam: "bar: {high, low, close}",
     output: "number",
   };
 }

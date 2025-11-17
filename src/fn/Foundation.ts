@@ -36,9 +36,8 @@ export class EMA {
 
   static readonly doc: OperatorDoc = {
     type: "EMA",
-    desc: "Exponential Moving Average",
     init: "{period?: number, alpha?: number}",
-    onDataParam: "x: number",
+    onDataParam: "x",
     output: "number",
   };
 }
@@ -96,9 +95,9 @@ export class EWMA {
 
   static readonly doc: OperatorDoc = {
     type: "EWMA",
-    desc: "Exponentially Weighted Moving Average",
+    desc: "Exp weighted sliding window MA",
     init: "{period: number}",
-    onDataParam: "x: number",
+    onDataParam: "x",
     output: "number",
   };
 }
@@ -146,9 +145,8 @@ export class SMA {
 
   static readonly doc: OperatorDoc = {
     type: "SMA",
-    desc: "Simple Moving Average",
     init: "{period: number}",
-    onDataParam: "x: number",
+    onDataParam: "x",
     output: "number",
   };
 }
@@ -203,7 +201,7 @@ export class Min {
     type: "Min",
     desc: "Sliding Window Minimum",
     init: "{period: number}",
-    onDataParam: "x: number",
+    onDataParam: "x",
     output: "number",
   };
 }
@@ -258,7 +256,7 @@ export class Max {
     type: "Max",
     desc: "Sliding Window Maximum",
     init: "{period: number}",
-    onDataParam: "x: number",
+    onDataParam: "x",
     output: "number",
   };
 }
@@ -305,7 +303,7 @@ export class Sum {
     type: "Sum",
     desc: "Sliding Window Sum",
     init: "{period: number}",
-    onDataParam: "x: number",
+    onDataParam: "x",
     output: "number",
   };
 }
@@ -373,8 +371,8 @@ export class MinMax {
     type: "MinMax",
     desc: "Sliding Window Min/Max",
     init: "{period: number}",
-    onDataParam: "x: number",
-    output: "{min: number, max: number}",
+    onDataParam: "x",
+    output: "{min, max}",
   };
 }
 
@@ -439,8 +437,8 @@ export class ArgMin {
     type: "ArgMin",
     desc: "Sliding Window ArgMin",
     init: "{period: number}",
-    onDataParam: "x: number",
-    output: "{val: number, pos: number}",
+    onDataParam: "x",
+    output: "{val, pos}",
   };
 }
 
@@ -505,8 +503,8 @@ export class ArgMax {
     type: "ArgMax",
     desc: "Sliding Window ArgMax",
     init: "{period: number}",
-    onDataParam: "x: number",
-    output: "{val: number, pos: number}",
+    onDataParam: "x",
+    output: "{val, pos}",
   };
 }
 
@@ -593,9 +591,8 @@ export class ArgMinMax {
     type: "ArgMinMax",
     desc: "Sliding Window ArgMin/ArgMax",
     init: "{period: number}",
-    onDataParam: "x: number",
-    output:
-      "{min: {val: number, pos: number}, max: {val: number, pos: number}}",
+    onDataParam: "x",
+    output: "{min: {val, pos}, max: {val, pos}}",
   };
 }
 
