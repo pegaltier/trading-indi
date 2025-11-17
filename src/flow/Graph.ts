@@ -63,6 +63,15 @@ export type GraphUpdateListener = (
   result: any
 ) => void | Promise<void>;
 
+export type ValidationError =
+  | { type: "cycle"; nodes: string[] }
+  | { type: "unreachable"; node: string[] };
+
+export interface ValidationResult {
+  valid: boolean;
+  errors: ValidationError[];
+}
+
 /**
  * DAG-based reactive computation graph.
  * Nodes execute synchronously in topological order.
@@ -167,6 +176,92 @@ export class Graph {
     this.updateListener.get(nodeName)!.push(callback);
     this.updateListenerCount++;
     return this;
+  }
+
+  /** Validate that the graph is acyclic (DAG) and all nodes are reachable. */
+  validate(): ValidationResult {
+    const errors: ValidationError[] = [];
+
+    // Cycle detection using DFS
+    const WHITE = 0;
+    const GRAY = 1;
+    const BLACK = 2;
+
+    const state = new Map<string, number>();
+
+    state.set(this.rootNode, WHITE);
+    for (const name of this.nodes.keys()) {
+      state.set(name, WHITE);
+    }
+
+    const dfs = (node: string, path: string[]): void => {
+      state.set(node, GRAY);
+      path.push(node);
+
+      const succs = this.successors.get(node);
+      if (succs) {
+        for (const succ of succs) {
+          const succState = state.get(succ);
+          if (succState === GRAY) {
+            const cycleStart = path.indexOf(succ);
+            const cycle = path.slice(cycleStart).concat(succ);
+            errors.push({ type: "cycle", nodes: cycle });
+            return;
+          }
+          if (succState === WHITE) {
+            dfs(succ, path);
+          }
+        }
+      }
+
+      path.pop();
+      state.set(node, BLACK);
+    };
+
+    for (const [name] of state) {
+      if (state.get(name) === WHITE) {
+        dfs(name, []);
+      }
+    }
+
+    // Reachability check: find all nodes reachable from root
+    const reachable = new Set<string>();
+    const bfs = (start: string): void => {
+      const queue = [start];
+      reachable.add(start);
+
+      while (queue.length > 0) {
+        const node = queue.shift()!;
+        const succs = this.successors.get(node);
+        if (succs) {
+          for (const succ of succs) {
+            if (!reachable.has(succ)) {
+              reachable.add(succ);
+              queue.push(succ);
+            }
+          }
+        }
+      }
+    };
+
+    bfs(this.rootNode);
+
+    // Check for unreachable nodes
+    const unreachableNodes: string[] = [];
+    for (const name of this.nodes.keys()) {
+      if (!reachable.has(name)) {
+        unreachableNodes.push(name);
+      }
+    }
+
+    if (unreachableNodes.length > 0) {
+      errors.push({ type: "unreachable", node: unreachableNodes });
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+    };
   }
 
   /** Execute the graph with new input data. */

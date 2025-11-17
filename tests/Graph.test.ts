@@ -432,4 +432,219 @@ describe("Graph", () => {
 
     expect(duration).toBeLessThan(100);
   });
+
+  it.concurrent("should validate acyclic graph without errors", () => {
+    const g = new Graph("tick");
+
+    g.add("ema1", new EMA({ period: 2 }))
+      .depends("tick")
+      .add("ema2", new EMA({ period: 3 }))
+      .depends("tick")
+      .add("sum", { onData: (a: number, b: number) => a + b })
+      .depends("ema1", "ema2");
+
+    const result = g.validate();
+    expect(result.valid).toBe(true);
+    expect(result.errors).toEqual([]);
+  });
+
+  it.concurrent("should detect simple cycle", () => {
+    const g = new Graph("tick");
+    const identity = { onData: (x: number) => x };
+
+    g.add("a", identity)
+      .depends("b")
+      .add("b", identity)
+      .depends("a");
+
+    const result = g.validate();
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(0);
+    expect(result.errors[0].type).toBe("cycle");
+    if (result.errors[0].type === "cycle") {
+      expect(result.errors[0].nodes).toContain("a");
+      expect(result.errors[0].nodes).toContain("b");
+    }
+  });
+
+  it.concurrent("should detect cycle in longer chain", () => {
+    const g = new Graph("tick");
+    const identity = { onData: (x: number) => x };
+
+    g.add("a", identity)
+      .depends("tick")
+      .add("b", identity)
+      .depends("a")
+      .add("c", identity)
+      .depends("b")
+      .add("d", identity)
+      .depends("c", "a");
+
+    const result = g.validate();
+    expect(result.valid).toBe(true);
+    expect(result.errors).toEqual([]);
+
+    const g2 = new Graph("tick");
+    g2.add("a", identity)
+      .depends("tick")
+      .add("b", identity)
+      .depends("a")
+      .add("c", identity)
+      .depends("b")
+      .add("d", identity)
+      .depends("c")
+      .add("e", identity)
+      .depends("d", "b");
+
+    const result2 = g2.validate();
+    expect(result2.valid).toBe(true);
+
+    const g3 = new Graph("tick");
+    g3.add("a", identity)
+      .depends("b")
+      .add("b", identity)
+      .depends("c")
+      .add("c", identity)
+      .depends("a");
+
+    const result3 = g3.validate();
+    expect(result3.valid).toBe(false);
+    expect(result3.errors.length).toBeGreaterThan(0);
+    expect(result3.errors[0].type).toBe("cycle");
+    if (result3.errors[0].type === "cycle") {
+      expect(result3.errors[0].nodes.length).toBeGreaterThan(2);
+    }
+  });
+
+  it.concurrent("should detect unreachable nodes", () => {
+    const g = new Graph("tick");
+    const identity = { onData: (x: number) => x };
+
+    g.add("a", identity)
+      .depends("tick")
+      .add("b", identity)
+      .depends("a")
+      .add("orphan", identity)
+      .depends("nonexistent");
+
+    const result = g.validate();
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((e) => e.type === "unreachable")).toBe(true);
+    const unreachableError = result.errors.find((e) => e.type === "unreachable");
+    if (unreachableError && unreachableError.type === "unreachable") {
+      expect(unreachableError.node).toContain("orphan");
+      expect(unreachableError.node.length).toBeGreaterThan(0);
+    }
+  });
+
+  it.concurrent("should detect two independent cycles", () => {
+    const g = new Graph("tick");
+    const identity = { onData: (x: number) => x };
+
+    // First cycle: a -> b -> c -> a
+    g.add("a", identity)
+      .depends("b")
+      .add("b", identity)
+      .depends("c")
+      .add("c", identity)
+      .depends("a");
+
+    // Second cycle: d -> e -> d
+    g.add("d", identity)
+      .depends("e")
+      .add("e", identity)
+      .depends("d");
+
+    const result = g.validate();
+    expect(result.valid).toBe(false);
+
+    const cycleErrors = result.errors.filter((e) => e.type === "cycle");
+
+    // Should detect at least one cycle (implementation may stop after first)
+    expect(cycleErrors.length).toBeGreaterThan(0);
+
+    // Verify the detected cycle(s) contain valid node sequences
+    for (const error of cycleErrors) {
+      if (error.type === "cycle") {
+        // Each cycle should have at least 2 nodes (to form a cycle)
+        expect(error.nodes.length).toBeGreaterThanOrEqual(2);
+
+        // First and last node should be the same (cycle starts and ends at same node)
+        expect(error.nodes[0]).toBe(error.nodes[error.nodes.length - 1]);
+      }
+    }
+
+    // Verify at least one cycle involves nodes from our defined cycles
+    const allCycleNodes = cycleErrors.flatMap((e) =>
+      e.type === "cycle" ? e.nodes : []
+    );
+    const hasFirstCycle =
+      allCycleNodes.includes("a") ||
+      allCycleNodes.includes("b") ||
+      allCycleNodes.includes("c");
+    const hasSecondCycle =
+      allCycleNodes.includes("d") || allCycleNodes.includes("e");
+
+    expect(hasFirstCycle || hasSecondCycle).toBe(true);
+  });
+
+  it.concurrent("should detect both cycles separately", () => {
+    const g = new Graph("tick");
+    const identity = { onData: (x: number) => x };
+
+    // First cycle: a -> b -> c -> a
+    g.add("a", identity)
+      .depends("b")
+      .add("b", identity)
+      .depends("c")
+      .add("c", identity)
+      .depends("a");
+
+    // Second cycle: d -> e -> d
+    g.add("d", identity)
+      .depends("e")
+      .add("e", identity)
+      .depends("d");
+
+    const result = g.validate();
+    expect(result.valid).toBe(false);
+
+    const cycleErrors = result.errors.filter((e) => e.type === "cycle");
+
+    // Should detect both independent cycles
+    expect(cycleErrors.length).toBe(2);
+
+    let foundCycle1 = false;
+    let foundCycle2 = false;
+
+    for (const error of cycleErrors) {
+      if (error.type === "cycle") {
+        const cycleNodeSet = new Set(error.nodes);
+
+        // Check for first cycle (a -> b -> c -> a or any permutation)
+        if (
+          cycleNodeSet.has("a") ||
+          cycleNodeSet.has("b") ||
+          cycleNodeSet.has("c")
+        ) {
+          foundCycle1 = true;
+          // Verify cycle structure
+          expect(error.nodes.length).toBeGreaterThanOrEqual(3);
+          expect(error.nodes[0]).toBe(error.nodes[error.nodes.length - 1]);
+        }
+
+        // Check for second cycle (d -> e -> d)
+        if (cycleNodeSet.has("d") || cycleNodeSet.has("e")) {
+          foundCycle2 = true;
+          // Verify cycle structure
+          expect(error.nodes.length).toBeGreaterThanOrEqual(2);
+          expect(error.nodes[0]).toBe(error.nodes[error.nodes.length - 1]);
+        }
+      }
+    }
+
+    // Both cycles should be detected
+    expect(foundCycle1).toBe(true);
+    expect(foundCycle2).toBe(true);
+  });
 });
