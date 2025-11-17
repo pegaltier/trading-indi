@@ -1,11 +1,11 @@
 export { Graph, makeOp, type Op } from "./Graph.js";
+export { OpRegistry } from "./Registry.js";
 export {
-  OpRegistry,
-  type OpDescriptor,
-  type GraphDescriptor,
-  type GraphDescValidationResult,
-  validateDescriptor,
+  type OpSchema,
+  type GraphSchema,
+  type GraphSchemaValidationResult,
+  validateGraphSchema,
   graphComplexity,
   type GraphDiff,
-  diffGraphs,
-} from "./Registry.js";
+  graphDiff,
+} from "./Schema.js";

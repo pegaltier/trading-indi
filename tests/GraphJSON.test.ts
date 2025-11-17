@@ -1,19 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { Graph, OpRegistry, type GraphDescriptor } from "../src/flow/index.js";
+import { Graph, OpRegistry, type GraphSchema } from "../src/flow/index.js";
 import { EMA } from "../src/fn/Foundation.js";
 
 describe("Graph JSON Serialization", () => {
   it("should construct graph from JSON descriptor", async () => {
     const registry = new OpRegistry().register("EMA", EMA);
 
-    const descriptor: GraphDescriptor = {
+    const descriptor: GraphSchema = {
       root: "tick",
       nodes: [
         {
           name: "ema",
           type: "EMA",
           init: { period: 2 },
-          input: ["tick"],
+          onDataSource: ["tick"],
         },
       ],
     };
@@ -38,20 +38,20 @@ describe("Graph JSON Serialization", () => {
   it("should handle multiple nodes and dependencies", async () => {
     const registry = new OpRegistry().register("EMA", EMA);
 
-    const descriptor: GraphDescriptor = {
+    const descriptor: GraphSchema = {
       root: "tick",
       nodes: [
         {
           name: "fast",
           type: "EMA",
           init: { period: 2 },
-          input: ["tick"],
+          onDataSource: ["tick"],
         },
         {
           name: "slow",
           type: "EMA",
           init: { period: 3 },
-          input: ["tick"],
+          onDataSource: ["tick"],
         },
       ],
     };
@@ -76,14 +76,14 @@ describe("Graph JSON Serialization", () => {
   it("should support property access in input paths", async () => {
     const registry = new OpRegistry().register("EMA", EMA);
 
-    const descriptor: GraphDescriptor = {
+    const descriptor: GraphSchema = {
       root: "tick",
       nodes: [
         {
           name: "ema",
           type: "EMA",
           init: { period: 2 },
-          input: ["tick.price"],
+          onDataSource: ["tick.price"],
         },
       ],
     };
@@ -115,25 +115,25 @@ describe("Graph JSON Serialization", () => {
       .register("EMA", EMA)
       .register("Subtract", Subtract);
 
-    const descriptor: GraphDescriptor = {
+    const descriptor: GraphSchema = {
       root: "tick",
       nodes: [
         {
           name: "fast",
           type: "EMA",
           init: { period: 2 },
-          input: ["tick"],
+          onDataSource: ["tick"],
         },
         {
           name: "slow",
           type: "EMA",
           init: { period: 3 },
-          input: ["tick"],
+          onDataSource: ["tick"],
         },
         {
           name: "diff",
           type: "Subtract",
-          input: ["fast", "slow"],
+          onDataSource: ["fast", "slow"],
         },
       ],
     };
@@ -156,14 +156,14 @@ describe("Graph JSON Serialization", () => {
   it("should throw error for unknown type", () => {
     const registry = new OpRegistry();
 
-    const descriptor: GraphDescriptor = {
+    const descriptor: GraphSchema = {
       root: "tick",
       nodes: [
         {
           name: "ema",
           type: "UnknownIndicator",
           init: { period: 2 },
-          input: ["tick"],
+          onDataSource: ["tick"],
         },
       ],
     };
@@ -182,13 +182,13 @@ describe("Graph JSON Serialization", () => {
 
     const registry = new OpRegistry().register("Identity", Identity);
 
-    const descriptor: GraphDescriptor = {
+    const descriptor: GraphSchema = {
       root: "tick",
       nodes: [
         {
           name: "identity",
           type: "Identity",
-          input: ["tick"],
+          onDataSource: ["tick"],
         },
       ],
     };
@@ -224,30 +224,30 @@ describe("Graph JSON Serialization", () => {
       .register("Multiply", Multiply)
       .register("Subtract", Subtract);
 
-    const descriptor: GraphDescriptor = {
+    const descriptor: GraphSchema = {
       root: "tick",
       nodes: [
         {
           name: "fast",
           type: "EMA",
           init: { period: 2 },
-          input: ["tick"],
+          onDataSource: ["tick"],
         },
         {
           name: "slow",
           type: "EMA",
           init: { period: 3 },
-          input: ["tick"],
+          onDataSource: ["tick"],
         },
         {
           name: "diff",
           type: "Subtract",
-          input: ["fast", "slow"],
+          onDataSource: ["fast", "slow"],
         },
         {
           name: "signal",
           type: "Multiply",
-          input: ["diff", "fast"],
+          onDataSource: ["diff", "fast"],
         },
       ],
     };

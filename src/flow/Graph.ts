@@ -1,4 +1,5 @@
-import type { GraphDescriptor, OpRegistry } from "./Registry.js";
+import type { OpRegistry } from "./Registry.js";
+import type { GraphSchema } from "./Schema.js";
 
 function resolvePath(state: Record<string, any>, path: string): any {
   if (!path) return undefined;
@@ -100,7 +101,7 @@ export class Graph {
   }
 
   /** Construct a graph from JSON descriptor. */
-  static fromJSON(descriptor: GraphDescriptor, registry: OpRegistry): Graph {
+  static fromJSON(descriptor: GraphSchema, registry: OpRegistry): Graph {
     const graph = new Graph(descriptor.root);
 
     for (const nodeDesc of descriptor.nodes) {
@@ -112,7 +113,7 @@ export class Graph {
       }
 
       const instance = new ctor(nodeDesc.init ?? {});
-      graph.add(nodeDesc.name, instance).depends(...nodeDesc.input);
+      graph.add(nodeDesc.name, instance).depends(...nodeDesc.onDataSource);
     }
 
     return graph;

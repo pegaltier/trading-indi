@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   OpRegistry,
-  type GraphDescriptor,
-  validateDescriptor,
+  type GraphSchema,
+  validateGraphSchema,
   graphComplexity,
 } from "../src/flow/index.js";
 
@@ -12,15 +12,15 @@ describe("Graph Validation", () => {
       .register("EMA", class {})
       .register("SMA", class {});
 
-    const descriptor: GraphDescriptor = {
+    const descriptor: GraphSchema = {
       root: "tick",
       nodes: [
-        { name: "fast", type: "EMA", input: ["tick"] },
-        { name: "slow", type: "SMA", input: ["tick"] },
+        { name: "fast", type: "EMA", onDataSource: ["tick"] },
+        { name: "slow", type: "SMA", onDataSource: ["tick"] },
       ],
     };
 
-    const result = validateDescriptor(descriptor, registry);
+    const result = validateGraphSchema(descriptor, registry);
     expect(result.valid).toBe(true);
     expect(result.errors).toHaveLength(0);
   });
@@ -28,12 +28,12 @@ describe("Graph Validation", () => {
   it("should detect unknown type", () => {
     const registry = new OpRegistry().register("EMA", class {});
 
-    const descriptor: GraphDescriptor = {
+    const descriptor: GraphSchema = {
       root: "tick",
-      nodes: [{ name: "ema", type: "Unknown", input: ["tick"] }],
+      nodes: [{ name: "ema", type: "Unknown", onDataSource: ["tick"] }],
     };
 
-    const result = validateDescriptor(descriptor, registry);
+    const result = validateGraphSchema(descriptor, registry);
     expect(result.valid).toBe(false);
     expect(result.errors).toContain('Unknown type "Unknown" for node "ema"');
   });
@@ -41,12 +41,12 @@ describe("Graph Validation", () => {
   it("should detect missing dependency", () => {
     const registry = new OpRegistry().register("EMA", class {});
 
-    const descriptor: GraphDescriptor = {
+    const descriptor: GraphSchema = {
       root: "tick",
-      nodes: [{ name: "ema", type: "EMA", input: ["missing"] }],
+      nodes: [{ name: "ema", type: "EMA", onDataSource: ["missing"] }],
     };
 
-    const result = validateDescriptor(descriptor, registry);
+    const result = validateGraphSchema(descriptor, registry);
     expect(result.valid).toBe(false);
     expect(result.errors).toContain(
       'Node "ema" references unknown dependency "missing"'
@@ -56,24 +56,24 @@ describe("Graph Validation", () => {
   it("should handle path dependencies", () => {
     const registry = new OpRegistry().register("EMA", class {});
 
-    const descriptor: GraphDescriptor = {
+    const descriptor: GraphSchema = {
       root: "tick",
-      nodes: [{ name: "ema", type: "EMA", input: ["tick.price"] }],
+      nodes: [{ name: "ema", type: "EMA", onDataSource: ["tick.price"] }],
     };
 
-    const result = validateDescriptor(descriptor, registry);
+    const result = validateGraphSchema(descriptor, registry);
     expect(result.valid).toBe(true);
   });
 
   it("should detect missing dependency when root is different", () => {
     const registry = new OpRegistry().register("EMA", class {});
 
-    const descriptor: GraphDescriptor = {
+    const descriptor: GraphSchema = {
       root: "price",
-      nodes: [{ name: "ema", type: "EMA", input: ["tick"] }],
+      nodes: [{ name: "ema", type: "EMA", onDataSource: ["tick"] }],
     };
 
-    const result = validateDescriptor(descriptor, registry);
+    const result = validateGraphSchema(descriptor, registry);
     expect(result.valid).toBe(false);
     expect(result.errors).toContain(
       'Node "ema" references unknown dependency "tick"'
@@ -83,16 +83,16 @@ describe("Graph Validation", () => {
   it("should detect cycle", () => {
     const registry = new OpRegistry().register("Op", class {});
 
-    const descriptor: GraphDescriptor = {
+    const descriptor: GraphSchema = {
       root: "a",
       nodes: [
-        { name: "a", type: "Op", input: ["c"] },
-        { name: "b", type: "Op", input: ["a"] },
-        { name: "c", type: "Op", input: ["b"] },
+        { name: "a", type: "Op", onDataSource: ["c"] },
+        { name: "b", type: "Op", onDataSource: ["a"] },
+        { name: "c", type: "Op", onDataSource: ["b"] },
       ],
     };
 
-    const result = validateDescriptor(descriptor, registry);
+    const result = validateGraphSchema(descriptor, registry);
     expect(result.valid).toBe(false);
     expect(result.errors).toContain("Graph contains a cycle");
   });
@@ -100,37 +100,37 @@ describe("Graph Validation", () => {
   it("should allow valid DAG", () => {
     const registry = new OpRegistry().register("Op", class {});
 
-    const descriptor: GraphDescriptor = {
+    const descriptor: GraphSchema = {
       root: "tick",
       nodes: [
-        { name: "a", type: "Op", input: ["tick"] },
-        { name: "b", type: "Op", input: ["a"] },
-        { name: "c", type: "Op", input: ["a", "b"] },
+        { name: "a", type: "Op", onDataSource: ["tick"] },
+        { name: "b", type: "Op", onDataSource: ["a"] },
+        { name: "c", type: "Op", onDataSource: ["a", "b"] },
       ],
     };
 
-    const result = validateDescriptor(descriptor, registry);
+    const result = validateGraphSchema(descriptor, registry);
     expect(result.valid).toBe(true);
   });
 });
 
 describe("Graph Complexity", () => {
   it("should calculate complexity for simple graph", () => {
-    const descriptor: GraphDescriptor = {
+    const descriptor: GraphSchema = {
       root: "tick",
-      nodes: [{ name: "ema", type: "EMA", input: ["tick"] }],
+      nodes: [{ name: "ema", type: "EMA", onDataSource: ["tick"] }],
     };
 
     expect(graphComplexity(descriptor)).toBe(2); // 1 node + 1 edge
   });
 
   it("should calculate complexity for complex graph", () => {
-    const descriptor: GraphDescriptor = {
+    const descriptor: GraphSchema = {
       root: "tick",
       nodes: [
-        { name: "a", type: "Op", input: ["tick"] },
-        { name: "b", type: "Op", input: ["tick"] },
-        { name: "c", type: "Op", input: ["a", "b"] },
+        { name: "a", type: "Op", onDataSource: ["tick"] },
+        { name: "b", type: "Op", onDataSource: ["tick"] },
+        { name: "c", type: "Op", onDataSource: ["a", "b"] },
       ],
     };
 
@@ -138,11 +138,11 @@ describe("Graph Complexity", () => {
   });
 
   it("should return node count for graph with no edges", () => {
-    const descriptor: GraphDescriptor = {
+    const descriptor: GraphSchema = {
       root: "tick",
       nodes: [
-        { name: "a", type: "Op", input: [] },
-        { name: "b", type: "Op", input: [] },
+        { name: "a", type: "Op", onDataSource: [] },
+        { name: "b", type: "Op", onDataSource: [] },
       ],
     };
 
