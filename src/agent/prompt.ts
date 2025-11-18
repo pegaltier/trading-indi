@@ -1,5 +1,5 @@
 import type { OpRegistry } from "../flow/Registry.js";
-import type { GraphSchema } from "../flow/Schema.js";
+import type { GraphSchema, GraphError } from "../flow/Schema.js";
 import { validateGraphSchema } from "../flow/Schema.js";
 
 /**
@@ -20,7 +20,7 @@ export interface AgentFeedback {
   schema?: GraphSchema;
   action: AgentFeedbackAction;
   parseError?: string;
-  validationErrors?: string[];
+  validationErrors?: GraphError[];
   evalMessage?: string;
   userInput?: string;
 }

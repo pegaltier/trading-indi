@@ -516,7 +516,7 @@ describe("Graph", () => {
     }
   });
 
-  it.concurrent("should detect unreachable nodes", () => {
+  it.concurrent("should detect node with unknown dependency", () => {
     const g = new Graph("tick");
     const identity = { onData: (x: number) => x };
 
@@ -529,11 +529,13 @@ describe("Graph", () => {
 
     const result = g.validate();
     expect(result.valid).toBe(false);
+    // Nodes with unknown dependencies are reported as unreachable
     expect(result.errors.some((e) => e.type === "unreachable")).toBe(true);
     const unreachableError = result.errors.find((e) => e.type === "unreachable");
     if (unreachableError && unreachableError.type === "unreachable") {
-      expect(unreachableError.node).toContain("orphan");
-      expect(unreachableError.node.length).toBeGreaterThan(0);
+      // Both "nonexistent" and "orphan" are unreachable
+      expect(unreachableError.nodes).toContain("orphan");
+      expect(unreachableError.nodes).toContain("nonexistent");
     }
   });
 

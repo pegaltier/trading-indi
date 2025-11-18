@@ -1,13 +1,50 @@
+import { z } from "zod";
 import { OpRegistry } from "./Registry.js";
+import type { TopoError } from "./validate.js";
+import { validateAdjList } from "./validate.js";
+
+/**
+ * Zod schema for operator node validation.
+ */
+export const OpSchemaZod = z.object({
+  name: z.string().min(1, "Node name must be non-empty"),
+  type: z.string().min(1, "Node type must be non-empty"),
+  init: z.unknown().optional(),
+  onDataSource: z.union([z.array(z.string()), z.string()]).optional(),
+});
 
 /**
  * Operator node schema for JSON serialization.
  */
-export interface OpSchema {
-  name: string;
-  type: string;
-  init?: any;
-  onDataSource?: string[] | string;
+export type OpSchema = z.infer<typeof OpSchemaZod>;
+
+/**
+ * Zod schema for graph validation.
+ */
+export const GraphSchemaZod = z.object({
+  root: z.string().min(1, "Root node name must be non-empty"),
+  nodes: z.array(OpSchemaZod),
+});
+
+/**
+ * Graph schema for JSON serialization.
+ */
+export type GraphSchema = z.infer<typeof GraphSchemaZod>;
+
+/**
+ * Unified graph error types.
+ */
+export type GraphError =
+  | { type: "structure"; path: string; message: string }
+  | { type: "unknown_type"; node: string; opType: string }
+  | TopoError;
+
+/**
+ * Result of graph validation.
+ */
+export interface GraphSchemaValidationResult {
+  valid: boolean;
+  errors: GraphError[];
 }
 
 /**
@@ -19,105 +56,104 @@ export function normalizeOnDataSource(source?: string[] | string): string[] {
 }
 
 /**
- * Graph schema for JSON serialization.
+ * Build successor adjacency list from graph schema.
+ * Nodes with no inputs depend on root.
  */
-export interface GraphSchema {
-  root: string;
-  nodes: OpSchema[];
-}
+function buildSuccessorMap(schema: GraphSchema): Map<string, string[]> {
+  const succ = new Map<string, string[]>();
 
-/**
- * Result of graph validation.
- */
-export interface GraphSchemaValidationResult {
-  valid: boolean;
-  errors: string[];
+  succ.set(schema.root, []);
+  for (const node of schema.nodes) {
+    succ.set(node.name, []);
+  }
+
+  for (const node of schema.nodes) {
+    const sources = normalizeOnDataSource(node.onDataSource);
+    if (sources.length === 0) {
+      // Nodes with no inputs (e.g., Const) depend on root
+      const rootSuccs = succ.get(schema.root)!;
+      if (!rootSuccs.includes(node.name)) {
+        rootSuccs.push(node.name);
+      }
+    } else {
+      for (const depPath of sources) {
+        const dep = depPath.split(".")[0]!;
+        const depSuccs = succ.get(dep);
+        if (depSuccs && !depSuccs.includes(node.name)) {
+          depSuccs.push(node.name);
+        }
+      }
+    }
+  }
+
+  return succ;
 }
 
 /**
  * Validate a graph schema against a registry.
  * Checks:
+ * - Schema structure (via Zod)
  * - All types exist in registry
- * - No cycles (topological sort feasibility)
- * - All dependencies reference existing nodes
- * @param desc Graph schema
+ * - Graph topology (cycles, reachability)
+ * @param schema Graph schema
  * @param registry Type registry
  */
 export function validateGraphSchema(
-  desc: GraphSchema,
+  schema: GraphSchema,
   registry: OpRegistry
 ): GraphSchemaValidationResult {
-  const errors: string[] = [];
-  const nodeNames = new Set(desc.nodes.map((n) => n.name));
-  nodeNames.add(desc.root);
+  const errors: GraphError[] = [];
 
-  for (const node of desc.nodes) {
-    if (!registry.has(node.type)) {
-      errors.push(`Unknown type "${node.type}" for node "${node.name}"`);
+  // Validate structure with Zod
+  const parseResult = GraphSchemaZod.safeParse(schema);
+  if (!parseResult.success) {
+    for (const issue of parseResult.error.issues) {
+      errors.push({
+        type: "structure",
+        path: issue.path.join("."),
+        message: issue.message,
+      });
     }
+    return { valid: false, errors };
+  }
 
-    const sources = normalizeOnDataSource(node.onDataSource);
-    for (const depPath of sources) {
-      const depNode = depPath.split(".")[0]!;
-      if (!nodeNames.has(depNode)) {
-        errors.push(
-          `Node "${node.name}" references unknown dependency "${depNode}"`
-        );
-      }
+  const validSchema = parseResult.data;
+
+  // Check all types exist in registry
+  for (const node of validSchema.nodes) {
+    if (!registry.has(node.type)) {
+      errors.push({
+        type: "unknown_type",
+        node: node.name,
+        opType: node.type,
+      });
     }
   }
 
+  // Check topology (unreachable errors will catch unknown dependencies)
   if (errors.length === 0) {
-    const cycleError = detectCycle(desc);
-    if (cycleError) {
-      errors.push(cycleError);
-    }
+    const succ = buildSuccessorMap(validSchema);
+    const topoErrors = validateAdjList(validSchema.root, succ);
+    errors.push(...topoErrors);
   }
 
   return { valid: errors.length === 0, errors };
 }
 
-function detectCycle(desc: GraphSchema): string | null {
-  const inDegree = new Map<string, number>();
-  const adjList = new Map<string, string[]>();
-
-  inDegree.set(desc.root, 0);
-  adjList.set(desc.root, []);
-
-  for (const node of desc.nodes) {
-    inDegree.set(node.name, 0);
-    adjList.set(node.name, []);
+/**
+ * Format validation error as human-readable string.
+ */
+export function formatValidationError(error: GraphError): string {
+  switch (error.type) {
+    case "structure":
+      return `${error.path}: ${error.message}`;
+    case "unknown_type":
+      return `Unknown type "${error.opType}" for node "${error.node}"`;
+    case "cycle":
+      return `Graph contains a cycle: ${error.nodes.join(" → ")}`;
+    case "unreachable":
+      return `Unreachable nodes from root: ${error.nodes.join(", ")}`;
   }
-
-  for (const node of desc.nodes) {
-    const sources = normalizeOnDataSource(node.onDataSource);
-    for (const depPath of sources) {
-      const dep = depPath.split(".")[0]!;
-      adjList.get(dep)!.push(node.name);
-      inDegree.set(node.name, inDegree.get(node.name)! + 1);
-    }
-  }
-
-  const queue: string[] = [];
-  for (const [name, degree] of inDegree) {
-    if (degree === 0) queue.push(name);
-  }
-
-  let processed = 0;
-  while (queue.length > 0) {
-    const current = queue.shift()!;
-    processed++;
-    for (const next of adjList.get(current)!) {
-      const newDegree = inDegree.get(next)! - 1;
-      inDegree.set(next, newDegree);
-      if (newDegree === 0) queue.push(next);
-    }
-  }
-
-  if (processed !== desc.nodes.length + 1) {
-    return "Graph contains a cycle";
-  }
-  return null;
 }
 
 /**

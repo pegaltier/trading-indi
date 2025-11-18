@@ -4,6 +4,7 @@ import {
   type GraphSchema,
   validateGraphSchema,
   graphComplexity,
+  Graph,
 } from "../src/flow/index.js";
 import type { OperatorDoc } from "../src/types/OpDoc.js";
 
@@ -60,7 +61,12 @@ describe("Graph Validation", () => {
 
     const result = validateGraphSchema(descriptor, registry);
     expect(result.valid).toBe(false);
-    expect(result.errors).toContain('Unknown type "Unknown" for node "ema"');
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toEqual({
+      type: "unknown_type",
+      node: "ema",
+      opType: "Unknown",
+    });
   });
 
   it("should detect missing dependency", () => {
@@ -73,9 +79,12 @@ describe("Graph Validation", () => {
 
     const result = validateGraphSchema(descriptor, registry);
     expect(result.valid).toBe(false);
-    expect(result.errors).toContain(
-      'Node "ema" references unknown dependency "missing"'
-    );
+    expect(result.errors).toHaveLength(1);
+    // Missing dependencies are detected as unreachable nodes
+    expect(result.errors[0].type).toBe("unreachable");
+    if (result.errors[0].type === "unreachable") {
+      expect(result.errors[0].nodes).toContain("ema");
+    }
   });
 
   it("should handle path dependencies", () => {
@@ -100,9 +109,12 @@ describe("Graph Validation", () => {
 
     const result = validateGraphSchema(descriptor, registry);
     expect(result.valid).toBe(false);
-    expect(result.errors).toContain(
-      'Node "ema" references unknown dependency "tick"'
-    );
+    expect(result.errors).toHaveLength(1);
+    // Missing dependencies are detected as unreachable nodes
+    expect(result.errors[0].type).toBe("unreachable");
+    if (result.errors[0].type === "unreachable") {
+      expect(result.errors[0].nodes).toContain("ema");
+    }
   });
 
   it("should detect cycle", () => {
@@ -119,7 +131,12 @@ describe("Graph Validation", () => {
 
     const result = validateGraphSchema(descriptor, registry);
     expect(result.valid).toBe(false);
-    expect(result.errors).toContain("Graph contains a cycle");
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]?.type).toBe("cycle");
+    expect(result.errors[0]).toHaveProperty("nodes");
+    if (result.errors[0]?.type === "cycle") {
+      expect(result.errors[0].nodes.length).toBeGreaterThan(0);
+    }
   });
 
   it("should allow valid DAG", () => {
@@ -226,5 +243,88 @@ describe("Graph Complexity", () => {
     } as any;
 
     expect(graphComplexity(descriptor)).toBe(3); // 2 nodes + 1 edge
+  });
+});
+
+describe("Graph.validate() - runtime validation", () => {
+  it("should detect non-existent dependency when built imperatively", () => {
+    const registry = new OpRegistry().register(EMA);
+    const ema = new EMA();
+
+    const graph = new Graph("tick");
+    const node = {
+      __isDagNode: true as const,
+      inputPath: ["nonExistent"],
+      onData: (state: Record<string, any>) => ema.onData(state.nonExistent),
+    };
+
+    graph.addNode("ema", node);
+
+    const result = graph.validate();
+    expect(result.valid).toBe(false);
+    expect(result.errors).toHaveLength(1);
+    // Runtime validation reports unknown dependencies as unreachable
+    expect(result.errors[0].type).toBe("unreachable");
+    if (result.errors[0].type === "unreachable") {
+      expect(result.errors[0].nodes).toContain("nonExistent");
+      expect(result.errors[0].nodes).toContain("ema");
+    }
+  });
+
+  it("should pass validation when all dependencies exist", () => {
+    const graph = new Graph("tick");
+    const node1 = {
+      __isDagNode: true as const,
+      inputPath: ["tick"],
+      onData: (state: Record<string, any>) => state.tick,
+    };
+    const node2 = {
+      __isDagNode: true as const,
+      inputPath: ["node1"],
+      onData: (state: Record<string, any>) => state.node1,
+    };
+
+    graph.addNode("node1", node1);
+    graph.addNode("node2", node2);
+
+    const result = graph.validate();
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it("should detect multiple non-existent dependencies", () => {
+    const graph = new Graph("tick");
+    const node1 = {
+      __isDagNode: true as const,
+      inputPath: ["missing1", "missing2"],
+      onData: (state: Record<string, any>) => null,
+    };
+
+    graph.addNode("node1", node1);
+
+    const result = graph.validate();
+    expect(result.valid).toBe(false);
+    expect(result.errors).toHaveLength(1);
+    // Multiple missing dependencies are reported as unreachable nodes
+    expect(result.errors[0].type).toBe("unreachable");
+    if (result.errors[0].type === "unreachable") {
+      expect(result.errors[0].nodes).toContain("missing1");
+      expect(result.errors[0].nodes).toContain("missing2");
+      expect(result.errors[0].nodes).toContain("node1");
+    }
+  });
+
+  it("should handle path-based dependencies correctly", () => {
+    const graph = new Graph("tick");
+    const node = {
+      __isDagNode: true as const,
+      inputPath: ["tick.price"],
+      onData: (state: Record<string, any>) => state.tick?.price,
+    };
+
+    graph.addNode("node1", node);
+
+    const result = graph.validate();
+    expect(result.valid).toBe(true);
   });
 });

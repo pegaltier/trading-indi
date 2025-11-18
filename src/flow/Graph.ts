@@ -1,6 +1,12 @@
 import type { OpRegistry } from "./Registry.js";
 import type { GraphSchema } from "./Schema.js";
-import { normalizeOnDataSource } from "./Schema.js";
+import {
+  normalizeOnDataSource,
+  validateGraphSchema,
+  formatValidationError,
+} from "./Schema.js";
+import type { TopoError } from "./validate.js";
+import { validateAdjList } from "./validate.js";
 
 function resolvePath(state: Record<string, any>, path: string): any {
   if (!path) return undefined;
@@ -40,7 +46,7 @@ class OpImpl implements Op {
 /**
  * Wraps an operator for use in the graph.
  * @param callable callable instance with onData method
- * @param inputPath Array of paths to extract from state
+ * @param inputPath Array of paths to extract from state as input to callable
  */
 export function makeOp(callable: any, inputPath: string[]): Op {
   return new OpImpl(callable, inputPath);
@@ -59,19 +65,18 @@ class OpBuilder {
   }
 }
 
+/** Graph output callback */
 export type GraphOutputCallback = (output: any) => void | Promise<void>;
+
+/** Graph update lisener callback */
 export type GraphUpdateListener = (
   nodeName: string,
   result: any
 ) => void | Promise<void>;
 
-export type GraphValidationError =
-  | { type: "cycle"; nodes: string[] }
-  | { type: "unreachable"; node: string[] };
-
 export interface GraphValidationResult {
   valid: boolean;
-  errors: GraphValidationError[];
+  errors: TopoError[];
 }
 
 /**
@@ -102,17 +107,19 @@ export class Graph {
   }
 
   /** Construct a graph from JSON descriptor. */
-  static fromJSON(descriptor: GraphSchema, registry: OpRegistry): Graph {
-    const graph = new Graph(descriptor.root);
+  static fromJSON(schema: GraphSchema, registry: OpRegistry): Graph {
+    const validationResult = validateGraphSchema(schema, registry);
+    if (!validationResult.valid) {
+      const errorMessages = validationResult.errors
+        .map((err) => formatValidationError(err))
+        .join("; ");
+      throw new Error(`Invalid graph schema: ${errorMessages}`);
+    }
 
-    for (const nodeDesc of descriptor.nodes) {
-      const ctor = registry.get(nodeDesc.type);
-      if (!ctor) {
-        throw new Error(
-          `Unknown type '${nodeDesc.type}' for node '${nodeDesc.name}'`
-        );
-      }
+    const graph = new Graph(schema.root);
 
+    for (const nodeDesc of schema.nodes) {
+      const ctor = registry.get(nodeDesc.type)!;
       const instance = new ctor(nodeDesc.init ?? {});
       const sources = normalizeOnDataSource(nodeDesc.onDataSource);
       graph.add(nodeDesc.name, instance).depends(...sources);
@@ -196,84 +203,7 @@ export class Graph {
 
   /** Validate that the graph is acyclic (DAG) and all nodes are reachable. */
   validate(): GraphValidationResult {
-    const errors: GraphValidationError[] = [];
-
-    // Cycle detection using DFS
-    const WHITE = 0;
-    const GRAY = 1;
-    const BLACK = 2;
-
-    const state = new Map<string, number>();
-
-    state.set(this.rootNode, WHITE);
-    for (const name of this.nodes.keys()) {
-      state.set(name, WHITE);
-    }
-
-    const dfs = (node: string, path: string[]): void => {
-      state.set(node, GRAY);
-      path.push(node);
-
-      const succs = this.successors.get(node);
-      if (succs) {
-        for (const succ of succs) {
-          const succState = state.get(succ);
-          if (succState === GRAY) {
-            const cycleStart = path.indexOf(succ);
-            const cycle = path.slice(cycleStart).concat(succ);
-            errors.push({ type: "cycle", nodes: cycle });
-            return;
-          }
-          if (succState === WHITE) {
-            dfs(succ, path);
-          }
-        }
-      }
-
-      path.pop();
-      state.set(node, BLACK);
-    };
-
-    for (const [name] of state) {
-      if (state.get(name) === WHITE) {
-        dfs(name, []);
-      }
-    }
-
-    // Reachability check: find all nodes reachable from root
-    const reachable = new Set<string>();
-    const bfs = (start: string): void => {
-      const queue = [start];
-      reachable.add(start);
-
-      while (queue.length > 0) {
-        const node = queue.shift()!;
-        const succs = this.successors.get(node);
-        if (succs) {
-          for (const succ of succs) {
-            if (!reachable.has(succ)) {
-              reachable.add(succ);
-              queue.push(succ);
-            }
-          }
-        }
-      }
-    };
-
-    bfs(this.rootNode);
-
-    // Check for unreachable nodes
-    const unreachableNodes: string[] = [];
-    for (const name of this.nodes.keys()) {
-      if (!reachable.has(name)) {
-        unreachableNodes.push(name);
-      }
-    }
-
-    if (unreachableNodes.length > 0) {
-      errors.push({ type: "unreachable", node: unreachableNodes });
-    }
-
+    const errors = validateAdjList(this.rootNode, this.successors);
     return {
       valid: errors.length === 0,
       errors,

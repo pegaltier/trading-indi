@@ -177,7 +177,7 @@ describe("Graph JSON Serialization", () => {
 
     expect(() => {
       Graph.fromJSON(descriptor, registry);
-    }).toThrow("Unknown type 'UnknownIndicator' for node 'ema'");
+    }).toThrow(/Unknown type "UnknownIndicator" for node "ema"/);
   });
 
   it("should handle nodes without init params", async () => {
