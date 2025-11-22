@@ -11,7 +11,7 @@ import type { OperatorDoc } from "../src/types/OpDoc.js";
 class EMA {
   static readonly doc: OperatorDoc = {
     type: "EMA",
-    onDataParam: "x: number",
+    update: "x: number",
     output: "number",
   };
 }
@@ -19,7 +19,7 @@ class EMA {
 class SMA {
   static readonly doc: OperatorDoc = {
     type: "SMA",
-    onDataParam: "x: number",
+    update: "x: number",
     output: "number",
   };
 }
@@ -27,22 +27,20 @@ class SMA {
 class Op {
   static readonly doc: OperatorDoc = {
     type: "Op",
-    onDataParam: "...args: any[]",
+    update: "...args: any[]",
     output: "any",
   };
 }
 
 describe("Graph Validation", () => {
   it("should validate a valid graph", () => {
-    const registry = new OpRegistry()
-      .register(EMA)
-      .register(SMA);
+    const registry = new OpRegistry().register(EMA).register(SMA);
 
     const descriptor: GraphSchema = {
       root: "tick",
       nodes: [
-        { name: "fast", type: "EMA", onDataSource: ["tick"] },
-        { name: "slow", type: "SMA", onDataSource: ["tick"] },
+        { name: "fast", type: "EMA", updateSource: ["tick"] },
+        { name: "slow", type: "SMA", updateSource: ["tick"] },
       ],
     };
 
@@ -56,7 +54,7 @@ describe("Graph Validation", () => {
 
     const descriptor: GraphSchema = {
       root: "tick",
-      nodes: [{ name: "ema", type: "Unknown", onDataSource: ["tick"] }],
+      nodes: [{ name: "ema", type: "Unknown", updateSource: ["tick"] }],
     };
 
     const result = validateGraphSchema(descriptor, registry);
@@ -74,7 +72,7 @@ describe("Graph Validation", () => {
 
     const descriptor: GraphSchema = {
       root: "tick",
-      nodes: [{ name: "ema", type: "EMA", onDataSource: ["missing"] }],
+      nodes: [{ name: "ema", type: "EMA", updateSource: ["missing"] }],
     };
 
     const result = validateGraphSchema(descriptor, registry);
@@ -92,7 +90,7 @@ describe("Graph Validation", () => {
 
     const descriptor: GraphSchema = {
       root: "tick",
-      nodes: [{ name: "ema", type: "EMA", onDataSource: ["tick.price"] }],
+      nodes: [{ name: "ema", type: "EMA", updateSource: ["tick.price"] }],
     };
 
     const result = validateGraphSchema(descriptor, registry);
@@ -104,7 +102,7 @@ describe("Graph Validation", () => {
 
     const descriptor: GraphSchema = {
       root: "price",
-      nodes: [{ name: "ema", type: "EMA", onDataSource: ["tick"] }],
+      nodes: [{ name: "ema", type: "EMA", updateSource: ["tick"] }],
     };
 
     const result = validateGraphSchema(descriptor, registry);
@@ -123,9 +121,9 @@ describe("Graph Validation", () => {
     const descriptor: GraphSchema = {
       root: "a",
       nodes: [
-        { name: "a", type: "Op", onDataSource: ["c"] },
-        { name: "b", type: "Op", onDataSource: ["a"] },
-        { name: "c", type: "Op", onDataSource: ["b"] },
+        { name: "a", type: "Op", updateSource: ["c"] },
+        { name: "b", type: "Op", updateSource: ["a"] },
+        { name: "c", type: "Op", updateSource: ["b"] },
       ],
     };
 
@@ -145,9 +143,9 @@ describe("Graph Validation", () => {
     const descriptor: GraphSchema = {
       root: "tick",
       nodes: [
-        { name: "a", type: "Op", onDataSource: ["tick"] },
-        { name: "b", type: "Op", onDataSource: ["a"] },
-        { name: "c", type: "Op", onDataSource: ["a", "b"] },
+        { name: "a", type: "Op", updateSource: ["tick"] },
+        { name: "b", type: "Op", updateSource: ["a"] },
+        { name: "c", type: "Op", updateSource: ["a", "b"] },
       ],
     };
 
@@ -155,14 +153,14 @@ describe("Graph Validation", () => {
     expect(result.valid).toBe(true);
   });
 
-  it("should validate when onDataSource is omitted (for Const nodes)", () => {
+  it("should validate when updateSource is omitted (for Const nodes)", () => {
     const registry = new OpRegistry().register(Op);
 
     const descriptor: GraphSchema = {
       root: "tick",
       nodes: [
         { name: "const", type: "Op" },
-        { name: "b", type: "Op", onDataSource: ["const"] },
+        { name: "b", type: "Op", updateSource: ["const"] },
       ],
     };
 
@@ -170,14 +168,14 @@ describe("Graph Validation", () => {
     expect(result.valid).toBe(true);
   });
 
-  it("should validate when onDataSource is empty string (for Const nodes)", () => {
+  it("should validate when updateSource is empty string (for Const nodes)", () => {
     const registry = new OpRegistry().register(Op);
 
     const descriptor: GraphSchema = {
       root: "tick",
       nodes: [
-        { name: "const", type: "Op", onDataSource: "" },
-        { name: "b", type: "Op", onDataSource: ["const"] },
+        { name: "const", type: "Op", updateSource: "" },
+        { name: "b", type: "Op", updateSource: ["const"] },
       ],
     } as any;
 
@@ -190,7 +188,7 @@ describe("Graph Complexity", () => {
   it("should calculate complexity for simple graph", () => {
     const descriptor: GraphSchema = {
       root: "tick",
-      nodes: [{ name: "ema", type: "EMA", onDataSource: ["tick"] }],
+      nodes: [{ name: "ema", type: "EMA", updateSource: ["tick"] }],
     };
 
     expect(graphComplexity(descriptor)).toBe(2); // 1 node + 1 edge
@@ -200,9 +198,9 @@ describe("Graph Complexity", () => {
     const descriptor: GraphSchema = {
       root: "tick",
       nodes: [
-        { name: "a", type: "Op", onDataSource: ["tick"] },
-        { name: "b", type: "Op", onDataSource: ["tick"] },
-        { name: "c", type: "Op", onDataSource: ["a", "b"] },
+        { name: "a", type: "Op", updateSource: ["tick"] },
+        { name: "b", type: "Op", updateSource: ["tick"] },
+        { name: "c", type: "Op", updateSource: ["a", "b"] },
       ],
     };
 
@@ -213,32 +211,32 @@ describe("Graph Complexity", () => {
     const descriptor: GraphSchema = {
       root: "tick",
       nodes: [
-        { name: "a", type: "Op", onDataSource: [] },
-        { name: "b", type: "Op", onDataSource: [] },
+        { name: "a", type: "Op", updateSource: [] },
+        { name: "b", type: "Op", updateSource: [] },
       ],
     };
 
     expect(graphComplexity(descriptor)).toBe(2); // 2 nodes + 0 edges
   });
 
-  it("should handle omitted onDataSource (for Const nodes)", () => {
+  it("should handle omitted updateSource (for Const nodes)", () => {
     const descriptor: GraphSchema = {
       root: "tick",
       nodes: [
         { name: "const", type: "Op" },
-        { name: "b", type: "Op", onDataSource: ["const"] },
+        { name: "b", type: "Op", updateSource: ["const"] },
       ],
     };
 
     expect(graphComplexity(descriptor)).toBe(3); // 2 nodes + 1 edge
   });
 
-  it("should handle empty string onDataSource (for Const nodes)", () => {
+  it("should handle empty string updateSource (for Const nodes)", () => {
     const descriptor: GraphSchema = {
       root: "tick",
       nodes: [
-        { name: "const", type: "Op", onDataSource: "" },
-        { name: "b", type: "Op", onDataSource: ["const"] },
+        { name: "const", type: "Op", updateSource: "" },
+        { name: "b", type: "Op", updateSource: ["const"] },
       ],
     } as any;
 
@@ -255,7 +253,7 @@ describe("Graph.validate() - runtime validation", () => {
     const node = {
       __isDagNode: true as const,
       inputPath: ["nonExistent"],
-      onData: (state: Record<string, any>) => ema.onData(state.nonExistent),
+      onData: (state: Record<string, any>) => ema.update(state.nonExistent),
     };
 
     graph.addNode("ema", node);
@@ -276,12 +274,12 @@ describe("Graph.validate() - runtime validation", () => {
     const node1 = {
       __isDagNode: true as const,
       inputPath: ["tick"],
-      onData: (state: Record<string, any>) => state.tick,
+      update: (state: Record<string, any>) => state.tick,
     };
     const node2 = {
       __isDagNode: true as const,
       inputPath: ["node1"],
-      onData: (state: Record<string, any>) => state.node1,
+      update: (state: Record<string, any>) => state.node1,
     };
 
     graph.addNode("node1", node1);
@@ -297,7 +295,7 @@ describe("Graph.validate() - runtime validation", () => {
     const node1 = {
       __isDagNode: true as const,
       inputPath: ["missing1", "missing2"],
-      onData: (state: Record<string, any>) => null,
+      update: (state: Record<string, any>) => null,
     };
 
     graph.addNode("node1", node1);
@@ -319,7 +317,7 @@ describe("Graph.validate() - runtime validation", () => {
     const node = {
       __isDagNode: true as const,
       inputPath: ["tick.price"],
-      onData: (state: Record<string, any>) => state.tick?.price,
+      update: (state: Record<string, any>) => state.tick?.price,
     };
 
     graph.addNode("node1", node);

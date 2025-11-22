@@ -22,9 +22,9 @@ describe("Topological Validation", () => {
       const schema: GraphSchema = {
         root: "tick",
         nodes: [
-          { name: "a", type: "Op", onDataSource: ["b"] },
-          { name: "b", type: "Op", onDataSource: ["c"] },
-          { name: "c", type: "Op", onDataSource: ["a"] },
+          { name: "a", type: "Op", updateSource: ["b"] },
+          { name: "b", type: "Op", updateSource: ["c"] },
+          { name: "c", type: "Op", updateSource: ["a"] },
         ],
       };
 
@@ -55,7 +55,7 @@ describe("Topological Validation", () => {
     it("should detect self-loop", () => {
       const schema: GraphSchema = {
         root: "tick",
-        nodes: [{ name: "a", type: "Op", onDataSource: ["a"] }],
+        nodes: [{ name: "a", type: "Op", updateSource: ["a"] }],
       };
 
       const result = validateGraphSchema(schema, registry);
@@ -76,8 +76,8 @@ describe("Topological Validation", () => {
       const schema: GraphSchema = {
         root: "a",
         nodes: [
-          { name: "a", type: "Op", onDataSource: ["b"] },
-          { name: "b", type: "Op", onDataSource: ["a"] },
+          { name: "a", type: "Op", updateSource: ["b"] },
+          { name: "b", type: "Op", updateSource: ["a"] },
         ],
       };
 
@@ -93,9 +93,9 @@ describe("Topological Validation", () => {
       const schema: GraphSchema = {
         root: "tick",
         nodes: [
-          { name: "a", type: "Op", onDataSource: ["tick"] },
-          { name: "b", type: "Op", onDataSource: ["tick"] },
-          { name: "isolated", type: "Op", onDataSource: ["missing"] },
+          { name: "a", type: "Op", updateSource: ["tick"] },
+          { name: "b", type: "Op", updateSource: ["tick"] },
+          { name: "isolated", type: "Op", updateSource: ["missing"] },
         ],
       };
 
@@ -110,12 +110,12 @@ describe("Topological Validation", () => {
       const schema: GraphSchema = {
         root: "tick",
         nodes: [
-          { name: "a", type: "Op", onDataSource: ["tick"] },
-          { name: "b", type: "Op", onDataSource: ["a"] },
+          { name: "a", type: "Op", updateSource: ["tick"] },
+          { name: "b", type: "Op", updateSource: ["a"] },
           // These form a separate component
-          { name: "x", type: "Op", onDataSource: ["y"] },
-          { name: "y", type: "Op", onDataSource: ["z"] },
-          { name: "z", type: "Op", onDataSource: ["x"] },
+          { name: "x", type: "Op", updateSource: ["y"] },
+          { name: "y", type: "Op", updateSource: ["z"] },
+          { name: "z", type: "Op", updateSource: ["x"] },
         ],
       };
 
@@ -132,8 +132,8 @@ describe("Topological Validation", () => {
       const schema: GraphSchema = {
         root: "tick",
         nodes: [
-          { name: "a", type: "Op", onDataSource: ["b"] },
-          { name: "b", type: "Op", onDataSource: ["a"] },
+          { name: "a", type: "Op", updateSource: ["b"] },
+          { name: "b", type: "Op", updateSource: ["a"] },
         ],
       };
 
@@ -158,12 +158,12 @@ describe("Topological Validation", () => {
         // Unknown type
         {
           root: "tick",
-          nodes: [{ name: "a", type: "Unknown", onDataSource: ["tick"] }],
+          nodes: [{ name: "a", type: "Unknown", updateSource: ["tick"] }],
         },
         // Unknown dependency
         {
           root: "tick",
-          nodes: [{ name: "a", type: "Op", onDataSource: ["missing"] }],
+          nodes: [{ name: "a", type: "Op", updateSource: ["missing"] }],
         },
       ];
 
@@ -189,11 +189,11 @@ describe("Topological Validation", () => {
       const schema: GraphSchema = {
         root: "tick",
         nodes: [
-          { name: "a", type: "Op", onDataSource: ["tick"] },
-          { name: "b", type: "Op", onDataSource: ["tick"] },
-          { name: "c", type: "Op", onDataSource: ["a", "b"] },
-          { name: "d", type: "Op", onDataSource: ["c"] },
-          { name: "e", type: "Op", onDataSource: ["b", "d"] },
+          { name: "a", type: "Op", updateSource: ["tick"] },
+          { name: "b", type: "Op", updateSource: ["tick"] },
+          { name: "c", type: "Op", updateSource: ["a", "b"] },
+          { name: "d", type: "Op", updateSource: ["c"] },
+          { name: "e", type: "Op", updateSource: ["b", "d"] },
         ],
       };
 
@@ -207,19 +207,19 @@ describe("Topological Validation", () => {
       const schema: GraphSchema = {
         root: "tick",
         nodes: [
-          { name: "a", type: "Op", onDataSource: ["tick"] },
-          { name: "b", type: "Op", onDataSource: ["a"] },
-          { name: "c", type: "Op", onDataSource: ["b"] },
-          { name: "d", type: "Op", onDataSource: ["c"] },
-          { name: "e", type: "Op", onDataSource: ["d", "b"] },
+          { name: "a", type: "Op", updateSource: ["tick"] },
+          { name: "b", type: "Op", updateSource: ["a"] },
+          { name: "c", type: "Op", updateSource: ["b"] },
+          { name: "d", type: "Op", updateSource: ["c"] },
+          { name: "e", type: "Op", updateSource: ["d", "b"] },
           // Create cycle: e -> a creates e -> d -> c -> b -> a -> (tick) but also e -> b
           // Let's make a real cycle:
-          { name: "f", type: "Op", onDataSource: ["e", "c"] },
+          { name: "f", type: "Op", updateSource: ["e", "c"] },
         ],
       };
 
       // Add actual cycle
-      schema.nodes[1]!.onDataSource = ["f"]; // b depends on f, creating cycle
+      schema.nodes[1]!.updateSource = ["f"]; // b depends on f, creating cycle
 
       const result = validateGraphSchema(schema, registry);
 

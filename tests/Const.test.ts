@@ -99,7 +99,7 @@ describe("Const", () => {
           name: "const",
           type: "Const",
           init: { value: 100 },
-          onDataSource: [],
+          updateSource: [],
         },
       ],
     };
@@ -127,23 +127,23 @@ describe("Const", () => {
           name: "multiplier",
           type: "Const",
           init: { value: 2 },
-          onDataSource: [],
+          updateSource: [],
         },
         {
           name: "offset",
           type: "Const",
           init: { value: 10 },
-          onDataSource: [],
+          updateSource: [],
         },
         {
           name: "scaled",
           type: "Mul",
-          onDataSource: ["tick", "multiplier"],
+          updateSource: ["tick", "multiplier"],
         },
         {
           name: "result",
           type: "Add",
-          onDataSource: ["scaled", "offset"],
+          updateSource: ["scaled", "offset"],
         },
       ],
     };
@@ -232,7 +232,7 @@ describe("Const", () => {
     expect(outputs[0].zero).toBe(0);
   });
 
-  it("should work with JSON schema when onDataSource is omitted", async () => {
+  it("should work with JSON schema when updateSource is omitted", async () => {
     const registry = new OpRegistry().register(Const);
 
     const descriptor: GraphSchema = {
@@ -259,7 +259,7 @@ describe("Const", () => {
     expect(outputs[0].const).toBe(100);
   });
 
-  it("should work with JSON schema when onDataSource is empty string", async () => {
+  it("should work with JSON schema when updateSource is empty string", async () => {
     const registry = new OpRegistry().register(Const);
 
     const descriptor: GraphSchema = {
@@ -269,7 +269,7 @@ describe("Const", () => {
           name: "const",
           type: "Const",
           init: { value: 100 },
-          onDataSource: "",
+          updateSource: "",
         },
       ],
     } as any;

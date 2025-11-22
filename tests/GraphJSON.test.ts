@@ -14,7 +14,7 @@ describe("Graph JSON Serialization", () => {
           name: "ema",
           type: "EMA",
           init: { period: 2 },
-          onDataSource: ["tick"],
+          updateSource: ["tick"],
         },
       ],
     };
@@ -46,13 +46,13 @@ describe("Graph JSON Serialization", () => {
           name: "fast",
           type: "EMA",
           init: { period: 2 },
-          onDataSource: ["tick"],
+          updateSource: ["tick"],
         },
         {
           name: "slow",
           type: "EMA",
           init: { period: 3 },
-          onDataSource: ["tick"],
+          updateSource: ["tick"],
         },
       ],
     };
@@ -84,7 +84,7 @@ describe("Graph JSON Serialization", () => {
           name: "ema",
           type: "EMA",
           init: { period: 2 },
-          onDataSource: ["tick.price"],
+          updateSource: ["tick.price"],
         },
       ],
     };
@@ -127,18 +127,18 @@ describe("Graph JSON Serialization", () => {
           name: "fast",
           type: "EMA",
           init: { period: 2 },
-          onDataSource: ["tick"],
+          updateSource: ["tick"],
         },
         {
           name: "slow",
           type: "EMA",
           init: { period: 3 },
-          onDataSource: ["tick"],
+          updateSource: ["tick"],
         },
         {
           name: "diff",
           type: "Subtract",
-          onDataSource: ["fast", "slow"],
+          updateSource: ["fast", "slow"],
         },
       ],
     };
@@ -168,7 +168,7 @@ describe("Graph JSON Serialization", () => {
           name: "ema",
           type: "UnknownIndicator",
           init: { period: 2 },
-          onDataSource: ["tick"],
+          updateSource: ["tick"],
         },
       ],
     };
@@ -199,7 +199,7 @@ describe("Graph JSON Serialization", () => {
         {
           name: "identity",
           type: "Identity",
-          onDataSource: ["tick"],
+          updateSource: ["tick"],
         },
       ],
     };
@@ -254,23 +254,23 @@ describe("Graph JSON Serialization", () => {
           name: "fast",
           type: "EMA",
           init: { period: 2 },
-          onDataSource: ["tick"],
+          updateSource: ["tick"],
         },
         {
           name: "slow",
           type: "EMA",
           init: { period: 3 },
-          onDataSource: ["tick"],
+          updateSource: ["tick"],
         },
         {
           name: "diff",
           type: "Subtract",
-          onDataSource: ["fast", "slow"],
+          updateSource: ["fast", "slow"],
         },
         {
           name: "signal",
           type: "Multiply",
-          onDataSource: ["diff", "fast"],
+          updateSource: ["diff", "fast"],
         },
       ],
     };
