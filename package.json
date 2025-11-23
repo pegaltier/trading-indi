@@ -31,13 +31,7 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "bench": "tsx benchmarks/bench.ts",
-    "bench:memory": "tsx benchmarks/memory.ts",
-    "bench:realtime": "tsx benchmarks/realtime.ts",
     "bench:graph": "NODE_OPTIONS=\"--expose-gc\" tsx benchmarks/graph-performance.ts",
-    "bench:graph:listeners": "tsx benchmarks/graph-listener-overhead.ts",
-    "bench:graph:profile": "node --prof --import tsx/esm benchmarks/graph-profile.ts",
-    "bench:graph:clinic": "clinic doctor -- node --import tsx/esm benchmarks/graph-profile.ts",
     "prepublishOnly": "pnpm run clean && pnpm run build"
   },
   "author": "Jun",
@@ -62,6 +56,7 @@
     "vitest": "^4.0.8"
   },
   "dependencies": {
+    "@junduck/trading-core": "^2.2.0",
     "zod": "^4.1.12"
   }
 }

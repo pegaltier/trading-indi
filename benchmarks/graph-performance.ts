@@ -16,31 +16,31 @@
  */
 
 import { Graph } from "../src/flow/index.js";
-import { EMA, SMA } from "../src/fn/Foundation.js";
+import { EMA, SMA } from "@junduck/trading-core";
 
 // Trivial computation nodes
 class Add {
   constructor(private value: number) {}
-  onData(x: number): number {
+  update(x: number): number {
     return x + this.value;
   }
 }
 
 class Multiply {
   constructor(private factor: number) {}
-  onData(x: number): number {
+  update(x: number): number {
     return x * this.factor;
   }
 }
 
 class Subtract {
-  onData(a: number, b: number): number {
+  update(a: number, b: number): number {
     return a - b;
   }
 }
 
 class Divide {
-  onData(a: number, b: number): number {
+  update(a: number, b: number): number {
     return b === 0 ? 0 : a / b;
   }
 }
@@ -102,7 +102,7 @@ function formatMemory(mb: number): string {
   return `${mb.toFixed(2)} MB`;
 }
 
-async function runBenchmark() {
+function runBenchmark() {
   console.log("=".repeat(60));
   console.log("DAG Execution Overhead Benchmark");
   console.log("=".repeat(60));
@@ -145,7 +145,7 @@ async function runBenchmark() {
   // Warmup
   console.log("\nWarming up (100 iterations)...");
   for (let i = 0; i < 100; i++) {
-    await graph.onData(100 + Math.random() * 10);
+    graph.update(100 + Math.random() * 10);
   }
 
   // Benchmark execution
@@ -157,7 +157,7 @@ async function runBenchmark() {
 
   for (let i = 0; i < iterations; i++) {
     const start = performance.now();
-    await graph.onData(100 + Math.random() * 10);
+    graph.update(100 + Math.random() * 10);
     times.push(performance.now() - start);
   }
 
@@ -214,4 +214,4 @@ async function runBenchmark() {
   console.log("\n" + "=".repeat(60));
 }
 
-runBenchmark().catch(console.error);
+runBenchmark();

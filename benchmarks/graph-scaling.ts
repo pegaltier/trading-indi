@@ -4,11 +4,11 @@
  */
 
 import { Graph } from "../src/flow/index.js";
-import { EMA } from "../src/fn/Foundation.js";
+import { EMA } from "@junduck/trading-core";
 
 class Add {
   constructor(private value: number) {}
-  onData(x: number): number {
+  update(x: number): number {
     return x + this.value;
   }
 }
@@ -18,28 +18,29 @@ function buildGraph(nodeCount: number): Graph {
 
   // Build linear chain of nodes
   for (let i = 0; i < nodeCount; i++) {
+    const prevNode = i === 0 ? "tick" : `node_${i - 1}`;
     if (i % 2 === 0) {
-      graph.add(`node_${i}`, new EMA({ period: 5 })).depends("tick");
+      graph.add(`node_${i}`, new EMA({ period: 5 })).depends(prevNode);
     } else {
-      graph.add(`node_${i}`, new Add(i)).depends(`node_${i - 1}`);
+      graph.add(`node_${i}`, new Add(i)).depends(prevNode);
     }
   }
 
   return graph;
 }
 
-async function benchmarkSize(nodeCount: number, iterations: number) {
+function benchmarkSize(nodeCount: number, iterations: number) {
   const graph = buildGraph(nodeCount);
 
   // Warmup
   for (let i = 0; i < 10; i++) {
-    await graph.onData(100);
+    graph.update(100);
   }
 
   // Benchmark
   const start = Date.now();
   for (let i = 0; i < iterations; i++) {
-    await graph.onData(100 + Math.random() * 10);
+    graph.update(100 + Math.random() * 10);
   }
   const elapsed = Date.now() - start;
 
@@ -52,7 +53,7 @@ async function benchmarkSize(nodeCount: number, iterations: number) {
   };
 }
 
-async function runScalingBenchmark() {
+function runScalingBenchmark() {
   console.log("Graph Scaling Benchmark");
   console.log("=".repeat(70));
   console.log();
@@ -69,7 +70,7 @@ async function runScalingBenchmark() {
   console.log("-".repeat(70));
 
   for (const config of configs) {
-    const result = await benchmarkSize(config.nodes, config.iterations);
+    const result = benchmarkSize(config.nodes, config.iterations);
     console.log(
       `${result.nodeCount.toString().padStart(5)} | ` +
         `${result.iterations.toString().padStart(10)} | ` +
@@ -83,4 +84,4 @@ async function runScalingBenchmark() {
   console.log("=".repeat(70));
 }
 
-runScalingBenchmark().catch(console.error);
+runScalingBenchmark();

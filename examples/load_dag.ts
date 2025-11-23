@@ -3,7 +3,11 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { OpRegistry } from "../src/flow/Registry.js";
 import { Graph } from "../src/flow/Graph.js";
-import { validateGraphSchema, type GraphSchema } from "../src/flow/Schema.js";
+import {
+  validateGraphSchema,
+  GraphSchemaZod,
+  formatValidationError,
+} from "../src/flow/Schema.js";
 import {
   regFoundation,
   regArithmeticPrimitive,
@@ -15,8 +19,24 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const jsonPath = join(__dirname, "gen_prompt_agent_output.json");
 const jsonContent = readFileSync(jsonPath, "utf-8");
-const graphSchema: GraphSchema = JSON.parse(jsonContent);
 
+// Parse and validate JSON structure with Zod
+console.log("Parsing and validating JSON structure...");
+const parseResult = GraphSchemaZod.safeParse(JSON.parse(jsonContent));
+
+if (!parseResult.success) {
+  console.error("❌ Schema structure validation failed:");
+  console.error(parseResult.error.format());
+  console.error("\nDetailed errors:");
+  for (const issue of parseResult.error.issues) {
+    console.error(`  - ${issue.path.join(".")}: ${issue.message}`);
+  }
+  process.exit(1);
+}
+
+const graphSchema = parseResult.data;
+
+console.log("✓ JSON structure validation passed");
 console.log("Loaded graph schema:");
 console.log(`  Root: ${graphSchema.root}`);
 console.log(`  Nodes: ${graphSchema.nodes.length}`);
@@ -28,13 +48,13 @@ regArithmeticPrimitive(registry);
 regLogicalPrimitive(registry);
 regFoundation(registry);
 
-console.log("Validating schema...");
+console.log("Validating business logic (registry, cycles, dependencies)...");
 const schemaValidation = validateGraphSchema(graphSchema, registry);
 
 if (!schemaValidation.valid) {
-  console.error("Schema validation failed:");
+  console.error("❌ Business logic validation failed:");
   for (const error of schemaValidation.errors) {
-    console.error(`  - ${error}`);
+    console.error(`  - ${formatValidationError(error)}`);
   }
   process.exit(1);
 }
@@ -81,7 +101,7 @@ graph.output((state) => {
 });
 
 // Execute with sample data
-await graph.onData(sampleTick);
+await graph.update(sampleTick);
 
 console.log();
 console.log("✓ Graph execution completed successfully");
