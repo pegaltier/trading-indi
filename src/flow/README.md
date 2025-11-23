@@ -1,27 +1,26 @@
 # Flow Module - Reactive Operator Composition
 
-The Flow module provides a declarative framework for composing trading algorithms as DAGs (Directed Acyclic Graphs). Instead of the traditional pipeline approach (`bar → [indicators] → signals`), Flow lets you express complex trading logic as reactive data flows where any node can be monitored and computation propagates automatically.
+The Flow module provides a declarative framework for composing trading algorithms as DAGs (Directed Acyclic Graphs). Instead of the traditional pipeline approach (`bar → [indicators] → signals`), Flow lets you express complex trading logic as reactive data flows where computation propagates automatically through the graph.
 
 ## Philosophy
 
 Traditional trading systems chain indicators in sequence, requiring explicit control flow. Flow takes a different approach:
 
 - **Describe the DAG, not the control flow**: Define what nodes depend on, not how to execute them
-- **Reactive**: Feed data once, observe any node; propagation happens automatically
+- **Synchronous execution**: All nodes execute in topological order (race-free, predictable)
 - **Dynamic**: Mix stateful operators (indicators) and stateless functions (aggregators, filters) seamlessly
 
 ## Core Concepts
 
-- **Graph**: DAG that executes nodes synchronously in topological order (race-free)
-- **Operator**: Any object with synchronous `onData()` method - indicators, transformations, aggregators
+- **Graph**: Synchronous DAG that executes nodes in topological order - simple, fast, race-free
+- **AsyncGraph**: Async DAG with event listeners for reactive monitoring
+- **Operator**: Any object with `onData()` method - indicators, transformations, aggregators
 - **Root**: Entry point that receives external data
 - **Dependencies**: Input paths that a node depends on
-- **Reactivity**: Emit node updates in real-time as data flows through
-- **Serialization**: Async listeners and output callbacks execute in order to maintain event sequence
 
 ## Basic Usage
 
-### Programmatic Construction
+### Synchronous Graph (Recommended)
 
 ```typescript
 import { Graph } from "@junduck/trading-indi/flow";
@@ -33,12 +32,11 @@ graph
   .add("fast", new EMA({ period: 12 }))
   .depends("tick")
   .add("slow", new EMA({ period: 26 }))
-  .depends("tick")
-  .output((state) => {
-    console.log(state.fast, state.slow);
-  });
+  .depends("tick");
 
-await graph.onData(100);
+// Execute synchronously, get all node states
+const state = graph.update(100);
+console.log(state.fast, state.slow);
 ```
 
 ### JSON Configuration
@@ -60,22 +58,21 @@ const config: GraphSchema = {
       name: "ema",
       type: "EMA",
       init: { period: 20 },
-      input: ["tick.price"]
+      updateSource: ["tick.price"]
     },
     {
       name: "sma",
       type: "SMA",
       init: { period: 20 },
-      input: ["tick.price"]
+      updateSource: ["tick.price"]
     }
   ]
 };
 
-// Construct from description
+// Construct and execute
 const graph = Graph.fromJSON(config, registry);
-
-graph.output(console.log);
-await graph.onData({ price: 100, volume: 1000 });
+const state = graph.update({ price: 100, volume: 1000 });
+console.log(state.ema, state.sma);
 ```
 
 ## Features
@@ -89,7 +86,7 @@ Access nested properties using dot notation:
   "name": "ema",
   "type": "EMA",
   "init": { "period": 20 },
-  "input": ["tick.price"]
+  "updateSource": ["tick.price"]
 }
 ```
 
@@ -101,28 +98,29 @@ Operators can depend on multiple upstream nodes:
 {
   "name": "diff",
   "type": "Subtract",
-  "input": ["fast", "slow"]
+  "updateSource": ["fast", "slow"]
 }
 ```
 
-### Async Listeners and Callbacks
+### AsyncGraph for Reactive Monitoring
 
-Operators must be synchronous for race-free stateful computation. However, listeners and output callbacks can be async and are serialized to maintain event order:
+For reactive use cases with event listeners, use `AsyncGraph`:
 
 ```typescript
-// Async output callback
-graph.output(async (state) => {
-  await saveToDatabase(state);
-  await sendToAPI(state);
-});
+import { AsyncGraph } from "@junduck/trading-indi/flow";
 
-// Async event listener
-graph.on("ema", async (nodeName, result) => {
-  await logToDatabase(nodeName, result);
-});
+const graph = new AsyncGraph("tick");
+
+graph
+  .add("ema", new EMA({ period: 12 }))
+  .depends("tick")
+  .on("ema", async (nodeName, result) => {
+    await logToDatabase(nodeName, result);
+  });
+
+// Returns promise, listeners execute in order
+await graph.update(100);
 ```
-
-All async callbacks from a single `onData()` call execute in order, preventing race conditions.
 
 ### Dynamic Execution
 
@@ -141,34 +139,46 @@ class EveryN {
 }
 ```
 
-### Reactive Monitoring
+### Observing State
 
-Listen to specific node updates in real-time:
+With synchronous `Graph`, read the returned state object:
 
 ```typescript
-// Listen to specific node
-graph.on("ema", (nodeName, result) => {
-  console.log(`${nodeName} updated:`, result);
-});
-
-// Listen to multiple nodes
-graph
-  .on("fast", (name, result) => console.log("Fast EMA:", result))
-  .on("slow", (name, result) => console.log("Slow EMA:", result));
+const state = graph.update(tick);
+console.log("Fast EMA:", state.fast);
+console.log("Slow EMA:", state.slow);
 ```
 
-Events are emitted only when operators produce non-undefined results. Listeners can be sync or async (see Async Listeners section above).
+With `AsyncGraph`, use event listeners:
+
+```typescript
+asyncGraph
+  .on("fast", (name, result) => console.log("Fast EMA:", result))
+  .on("slow", (name, result) => console.log("Slow EMA:", result));
+
+await asyncGraph.update(tick);
+```
+
+Events are emitted only when operators produce non-undefined results.
 
 ## API Reference
 
-### Graph
+### Graph (Synchronous)
 
 - `constructor(rootNode: string)` - Create graph with root node
-- `add(name, operator)` - Add operator and get OpBuilder
-- `output(callback)` - Set output handler (sync or async)
+- `add(name, operator)` - Add operator and get NodeBuilder
+- `update(data)` - Execute graph synchronously, returns state object
+- `validate()` - Validate DAG structure
+- `static fromJSON(schema, registry)` - Construct from JSON
+
+### AsyncGraph
+
+- `constructor(rootNode: string)` - Create graph with root node
+- `add(name, operator)` - Add operator and get NodeBuilder
 - `on(nodeName, callback)` - Listen to specific node updates (sync or async)
-- `onData(data)` - Execute graph with new data (returns Promise)
-- `static fromJSON(descriptor, registry)` - Construct from JSON
+- `update(data)` - Execute graph asynchronously, returns `Promise<state>`
+- `validate()` - Validate DAG structure
+- `static fromJSON(schema, registry)` - Construct from JSON
 
 ### OpRegistry
 
@@ -180,10 +190,10 @@ Events are emitted only when operators produce non-undefined results. Listeners 
 
 ```typescript
 interface OpSchema {
-  name: string;      // Node name in graph
-  type: string;      // Type name in registry
-  init?: any;        // Constructor parameters
-  input: string[];   // Input dependency paths
+  name: string;           // Node name in graph
+  type: string;           // Type name in registry
+  init?: any;             // Constructor parameters
+  updateSource: string[]; // Input dependency paths
 }
 ```
 
@@ -201,8 +211,8 @@ interface GraphSchema {
 1. **Declarative**: Describe what you want, not how to compute it
 2. **Race-free**: Synchronous execution prevents state corruption in stateful indicators
 3. **Composable**: Mix stateful indicators with stateless transformations
-4. **Observable**: Monitor any node without modifying the graph
-5. **Ordered Events**: Async callbacks are serialized to maintain event sequence
+4. **Simple**: Synchronous `Graph` returns state directly - no promises, callbacks, or complexity
+5. **Flexible**: Use `AsyncGraph` when you need event listeners or async I/O
 6. **Portable**: Save and share graph configurations as JSON
 7. **Versionable**: Track changes to trading strategies in version control
 8. **Dynamic**: Load different configurations at runtime
@@ -218,24 +228,24 @@ interface GraphSchema {
       "name": "fast",
       "type": "EMA",
       "init": { "period": 12 },
-      "input": ["tick.price"]
+      "updateSource": ["tick.price"]
     },
     {
       "name": "slow",
       "type": "EMA",
       "init": { "period": 26 },
-      "input": ["tick.price"]
+      "updateSource": ["tick.price"]
     },
     {
       "name": "macd",
       "type": "Subtract",
-      "input": ["fast", "slow"]
+      "updateSource": ["fast", "slow"]
     },
     {
       "name": "signal",
       "type": "EMA",
       "init": { "period": 9 },
-      "input": ["macd"]
+      "updateSource": ["macd"]
     }
   ]
 }
@@ -243,13 +253,12 @@ interface GraphSchema {
 
 ## Custom Operators
 
-Any object with a synchronous `onData()` method can be an operator. Operators must be synchronous to ensure race-free execution:
+Any object with an `onData()` method can be an operator:
 
 ```typescript
 class CrossOver {
   private prev?: { a: number; b: number };
 
-  // Must be synchronous, not async
   onData({ a, b }: { a: number; b: number }): "up" | "down" | undefined {
     if (!this.prev) {
       this.prev = { a, b };
@@ -275,15 +284,15 @@ Then use it in your DAG:
 {
   "name": "signal",
   "type": "CrossOver",
-  "input": ["fast", "slow"]
+  "updateSource": ["fast", "slow"]
 }
 ```
 
-**Important**: Operators can maintain internal state but must not perform async operations. Use listeners or output callbacks for async I/O.
+**Important**: Operators must be synchronous. For async I/O, use `AsyncGraph` event listeners.
 
 ## Race-Free Design
 
-The Flow module is designed for stateful, online indicators in async environments:
+The Flow module is designed for stateful, online indicators:
 
 ### The Problem
 
@@ -302,18 +311,23 @@ priceStream.on('tick', async (price) => {
 
 ### The Solution
 
-Flow executes all computation **synchronously** in a single pass, then serializes async callbacks:
+Both `Graph` and `AsyncGraph` execute all computation **synchronously** in topological order:
 
 ```typescript
-graph.onData(100);  // All nodes execute synchronously (atomic)
-graph.onData(50);   // Executes after 100, guaranteed
+// Synchronous - simple and fast
+const state = graph.update(100);  // All nodes execute, returns state
+const state2 = graph.update(50);  // Executes after 100
+
+// Async - for event listeners
+await asyncGraph.update(100);  // All nodes execute, then listeners run
+await asyncGraph.update(50);   // Executes after 100
 ```
 
 **Guarantees:**
 
 - Node state updates are atomic (no interleaving)
 - Events process in arrival order
-- Async listeners and output callbacks maintain order
-- No locks or queues needed in your code
+- `AsyncGraph` serializes event listeners to maintain order
+- No locks or queues needed
 
 This design ensures indicators like EMA, MACD, and RSI maintain correct state even under high-frequency data streams.
