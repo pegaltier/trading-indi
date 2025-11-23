@@ -373,4 +373,16 @@ describe("Graph", () => {
     expect(foundCycle1).toBe(true);
     expect(foundCycle2).toBe(true);
   });
+
+  it("should prevent duplicate node names", () => {
+    const g = new Graph("tick");
+    const identity = { update: (x: number) => x };
+
+    g.add("a", identity).depends("tick");
+
+    // Attempting to add a node with the same name should throw
+    expect(() => {
+      g.add("a", identity).depends("tick");
+    }).toThrow("node already exists");
+  });
 });
