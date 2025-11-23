@@ -7,72 +7,16 @@ import {
 } from "./Schema.js";
 import type { TopoError } from "./validate.js";
 import { validateAdjList } from "./validate.js";
+import { OpAdapter, type DagNode, type Op } from "./utils.js";
 
-function resolvePath(state: Record<string, any>, path: string): any {
-  if (!path) return undefined;
-
-  const parts = path.split(".");
-  let value = state[parts[0]!];
-
-  for (let i = 1; i < parts.length && value !== undefined; i++) {
-    value = value?.[parts[i]!];
-  }
-
-  return value;
-}
-
-/** Op node interface for DAG execution. Nodes must be synchronous. */
-export interface Op {
-  readonly __isDagNode: true;
-  readonly inputPath: string[];
-
-  predSatisfied(state: Record<string, any>): any;
-}
-
-class OpImpl implements Op {
-  readonly __isDagNode = true;
-  readonly inputPath: string[];
-
-  constructor(private callable: any, inputPath: string[]) {
-    this.inputPath = inputPath;
-  }
-
-  predSatisfied(state: Record<string, any>): any {
-    const args = this.inputPath.map((path) => resolvePath(state, path));
-    return this.callable.update(...args);
-  }
-}
-
-/**
- * Wraps an operator for use in the graph.
- * @param callable callable instance with update method
- * @param inputPath Array of paths to extract from state as input to callable
- */
-export function makeOp(callable: any, inputPath: string[]): Op {
-  return new OpImpl(callable, inputPath);
-}
-
-class OpBuilder {
-  constructor(
-    private graph: Graph,
-    private name: string,
-    private callable: any
-  ) {}
+class NodeBuilder {
+  constructor(private graph: Graph, private name: string, private op: Op) {}
 
   depends(...inputPaths: string[]): Graph {
-    const node = new OpImpl(this.callable, inputPaths);
+    const node = new OpAdapter(this.op, inputPaths);
     return this.graph.addNode(this.name, node);
   }
 }
-
-/** Graph output callback */
-export type GraphOutputCallback = (output: any) => void | Promise<void>;
-
-/** Graph update lisener callback */
-export type GraphUpdateListener = (
-  nodeName: string,
-  result: any
-) => void | Promise<void>;
 
 export interface GraphValidationResult {
   valid: boolean;
@@ -80,21 +24,14 @@ export interface GraphValidationResult {
 }
 
 /**
- * DAG-based reactive computation graph.
+ * DAG-based computation graph.
  * Nodes execute synchronously in topological order.
- * Async listeners and output callbacks are serialized to maintain event order.
  */
 export class Graph {
   private readonly rootNode: string;
-  private readonly nodes: Map<string, Op> = new Map();
+  private readonly nodes: Map<string, DagNode> = new Map();
   private readonly predecessors: Map<string, string[]> = new Map();
   private readonly successors: Map<string, string[]> = new Map();
-  private readonly updateListener: Map<string, Array<GraphUpdateListener>> =
-    new Map();
-
-  private outputCallback?: GraphOutputCallback;
-  private updateListenerCount = 0;
-  private notifyQueue = Promise.resolve();
 
   /**
    * Create a new Graph with a root node.
@@ -122,24 +59,25 @@ export class Graph {
       const ctor = registry.get(nodeDesc.type)!;
       const instance = new ctor(nodeDesc.init ?? {});
       const sources = normalizeUpdateSource(nodeDesc.updateSource);
-      graph.add(nodeDesc.name, instance).depends(...sources);
+      const node = new OpAdapter(instance, sources);
+      graph.addNode(nodeDesc.name, node);
     }
 
     return graph;
   }
 
   /** Add a computation node to the graph. */
-  add(name: string, node: Op): this;
-  add(name: string, callable: any): OpBuilder;
-  add(name: string, nodeOrCallable: any): this | OpBuilder {
-    if (nodeOrCallable.__isDagNode) {
-      return this.addNode(name, nodeOrCallable);
+  add(name: string, node: DagNode): this;
+  add(name: string, op: Op): NodeBuilder;
+  add(name: string, nodeOrOp: unknown): this | NodeBuilder {
+    if ((nodeOrOp as any).__isDagNode) {
+      return this.addNode(name, nodeOrOp as DagNode);
     }
-    return new OpBuilder(this, name, nodeOrCallable);
+    return new NodeBuilder(this, name, nodeOrOp as Op);
   }
 
   /** @internal */
-  addNode(name: string, node: Op): this {
+  addNode(name: string, node: DagNode): this {
     if (name === this.rootNode) {
       throw new Error(
         `Cannot add node with name '${name}': conflicts with root node`
@@ -185,22 +123,6 @@ export class Graph {
     return this;
   }
 
-  /** Set output callback to receive computed state. */
-  output(callback: GraphOutputCallback): this {
-    this.outputCallback = callback;
-    return this;
-  }
-
-  /** Register event listener for specific node updates. */
-  on(nodeName: string, callback: GraphUpdateListener): this {
-    if (!this.updateListener.has(nodeName)) {
-      this.updateListener.set(nodeName, []);
-    }
-    this.updateListener.get(nodeName)!.push(callback);
-    this.updateListenerCount++;
-    return this;
-  }
-
   /** Validate that the graph is acyclic (DAG) and all nodes are reachable. */
   validate(): GraphValidationResult {
     const errors = validateAdjList(this.rootNode, this.successors);
@@ -211,7 +133,7 @@ export class Graph {
   }
 
   /** Execute the graph with new input data. */
-  async update(data: any): Promise<void> {
+  update(data: any): Record<string, any> {
     let state: Record<string, any> = { [this.rootNode]: data };
 
     // Initialize topological sort
@@ -224,10 +146,6 @@ export class Graph {
     const queue = new Array<string>(this.nodes.size);
     let readPtr = 0;
     let writePtr = 0;
-
-    // Pre-allocate emissions array for listener promises
-    const emissions = new Array<Promise<void>>(this.updateListenerCount);
-    let emissionCount = 0;
 
     // Enqueue root successors
     const rootSuccessors = this.successors.get(this.rootNode);
@@ -251,19 +169,6 @@ export class Graph {
         continue;
       }
 
-      // Collect listener promises for later serialization
-      if (this.updateListenerCount) {
-        const listeners = this.updateListener.get(nodeName);
-        if (listeners) {
-          for (const listener of listeners) {
-            const promise = listener(nodeName, result);
-            if (promise instanceof Promise) {
-              emissions[emissionCount++] = promise;
-            }
-          }
-        }
-      }
-
       state[nodeName] = result;
 
       // Enqueue successors
@@ -281,17 +186,6 @@ export class Graph {
       }
     }
 
-    // Serialize notifications to maintain event order
-    const notify = async () => {
-      if (emissionCount > 0) {
-        await Promise.all(emissions.slice(0, emissionCount));
-      }
-      if (this.outputCallback) {
-        await this.outputCallback(state);
-      }
-    };
-
-    this.notifyQueue = this.notifyQueue.then(notify);
-    await this.notifyQueue;
+    return state;
   }
 }

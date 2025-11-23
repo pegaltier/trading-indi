@@ -1,0 +1,590 @@
+# Task: Generate GraphSchema
+
+You are an expert in creating computation DAGs for technical indicators.
+
+## Available Operators
+
+{
+  "const": [
+    {
+      "type": "Const",
+      "desc": "Constant value source (no input required)",
+      "init": "{value: number}",
+      "update": "",
+      "output": "number"
+    }
+  ],
+  "arithmetic": [
+    {
+      "type": "Add",
+      "update": "lhs, rhs",
+      "output": "number"
+    },
+    {
+      "type": "Sub",
+      "update": "lhs, rhs",
+      "output": "number"
+    },
+    {
+      "type": "Mul",
+      "update": "lhs, rhs",
+      "output": "number"
+    },
+    {
+      "type": "Div",
+      "desc": "Division",
+      "update": "lhs, rhs",
+      "output": "number"
+    },
+    {
+      "type": "Mod",
+      "desc": "Modulo",
+      "update": "lhs, rhs",
+      "output": "number"
+    },
+    {
+      "type": "Pow",
+      "update": "base, exp",
+      "output": "number"
+    },
+    {
+      "type": "Min",
+      "update": "lhs, rhs",
+      "output": "number"
+    },
+    {
+      "type": "Max",
+      "update": "lhs, rhs",
+      "output": "number"
+    },
+    {
+      "type": "Negate",
+      "update": "x",
+      "output": "number"
+    },
+    {
+      "type": "Abs",
+      "update": "x",
+      "output": "number"
+    },
+    {
+      "type": "Sign",
+      "update": "x",
+      "output": "-1, 0, 1"
+    },
+    {
+      "type": "Floor",
+      "update": "x",
+      "output": "number"
+    },
+    {
+      "type": "Ceil",
+      "update": "x: number",
+      "output": "number"
+    },
+    {
+      "type": "Round",
+      "update": "x",
+      "output": "number"
+    },
+    {
+      "type": "Sqrt",
+      "update": "x",
+      "output": "number"
+    },
+    {
+      "type": "Log",
+      "desc": "Natural logarithm",
+      "update": "x",
+      "output": "number"
+    },
+    {
+      "type": "Exp",
+      "update": "x",
+      "output": "number"
+    },
+    {
+      "type": "Log1p",
+      "update": "x",
+      "output": "number"
+    },
+    {
+      "type": "Expm1",
+      "update": "x",
+      "output": "number"
+    },
+    {
+      "type": "Reciprocal",
+      "update": "x",
+      "output": "number"
+    },
+    {
+      "type": "Clamp",
+      "update": "x, min, max",
+      "output": "number"
+    },
+    {
+      "type": "Lerp",
+      "update": "a, b, t",
+      "output": "number"
+    },
+    {
+      "type": "SumOf",
+      "update": "...inputs: number[]",
+      "output": "number"
+    },
+    {
+      "type": "ProdOf",
+      "update": "...inputs: number[]",
+      "output": "number"
+    },
+    {
+      "type": "AvgOf",
+      "update": "...inputs: number[]",
+      "output": "number"
+    },
+    {
+      "type": "MinOf",
+      "update": "...inputs: number[]",
+      "output": "number"
+    },
+    {
+      "type": "MaxOf",
+      "update": "...inputs: number[]",
+      "output": "number"
+    },
+    {
+      "type": "RelDist",
+      "desc": "abs(a-b)/abs(b)",
+      "update": "a, b",
+      "output": "number"
+    }
+  ],
+  "logical": [
+    {
+      "type": "LT",
+      "update": "lhs, rhs",
+      "output": "boolean"
+    },
+    {
+      "type": "GT",
+      "update": "lhs, rhs",
+      "output": "boolean"
+    },
+    {
+      "type": "LTE",
+      "update": "lhs, rhs",
+      "output": "boolean"
+    },
+    {
+      "type": "GTE",
+      "update": "lhs, rhs",
+      "output": "boolean"
+    },
+    {
+      "type": "EQ",
+      "update": "lhs, rhs",
+      "output": "boolean"
+    },
+    {
+      "type": "NEQ",
+      "update": "lhs, rhs",
+      "output": "boolean"
+    },
+    {
+      "type": "Between",
+      "desc": "lo <= x <= hi",
+      "update": "x, lo, hi",
+      "output": "boolean"
+    },
+    {
+      "type": "Outside",
+      "desc": "x < lo || x > hi",
+      "update": "x, lo, hi",
+      "output": "boolean"
+    },
+    {
+      "type": "And",
+      "update": "lhs, rhs",
+      "output": "boolean"
+    },
+    {
+      "type": "Or",
+      "update": "lhs, rhs",
+      "output": "boolean"
+    },
+    {
+      "type": "Not",
+      "update": "x",
+      "output": "boolean"
+    },
+    {
+      "type": "Xor",
+      "update": "lhs, rhs",
+      "output": "boolean"
+    },
+    {
+      "type": "AllOf",
+      "update": "...inputs: boolean[]",
+      "output": "boolean"
+    },
+    {
+      "type": "AnyOf",
+      "update": "...inputs: boolean[]",
+      "output": "boolean"
+    },
+    {
+      "type": "NoneOf",
+      "update": "...inputs: boolean[]",
+      "output": "boolean"
+    },
+    {
+      "type": "IsNaN",
+      "update": "x",
+      "output": "boolean"
+    },
+    {
+      "type": "IsFinite",
+      "update": "x",
+      "output": "boolean"
+    },
+    {
+      "type": "IsPositive",
+      "update": "x",
+      "output": "boolean"
+    },
+    {
+      "type": "IsNegative",
+      "update": "x",
+      "output": "boolean"
+    },
+    {
+      "type": "IsZero",
+      "update": "x",
+      "output": "boolean"
+    },
+    {
+      "type": "IfThenElse",
+      "update": "cond, thenVal, elseVal",
+      "output": "thenVal | elseVal"
+    },
+    {
+      "type": "Gate",
+      "update": "cond, val",
+      "output": "val | undefined"
+    },
+    {
+      "type": "Coalesce",
+      "update": "...inputs",
+      "output": "first non-null"
+    }
+  ],
+  "core.online": [
+    {
+      "type": "CMA",
+      "update": "x",
+      "output": "number"
+    },
+    {
+      "type": "CuVar",
+      "init": "{ddof?: number}",
+      "update": "x",
+      "output": "{mean, variance}"
+    },
+    {
+      "type": "CuStddev",
+      "init": "{ddof?: number}",
+      "update": "x",
+      "output": "{mean, stddev}"
+    },
+    {
+      "type": "CuSkew",
+      "update": "x",
+      "output": "{mean, variance, skew}"
+    },
+    {
+      "type": "CuKurt",
+      "update": "x",
+      "output": "{mean, variance, kurt}"
+    },
+    {
+      "type": "CuCov",
+      "init": "{ddof?: number}",
+      "update": "x, y",
+      "output": "{meanX, meanY, cov}"
+    },
+    {
+      "type": "CuCorr",
+      "init": "{ddof?: number}",
+      "update": "x, y",
+      "output": "{meanX, meanY, cov, corr}"
+    },
+    {
+      "type": "CuBeta",
+      "init": "{ddof?: number}",
+      "update": "x, y",
+      "output": "{meanX, meanY, cov, beta}"
+    }
+  ],
+  "core.rolling": [
+    {
+      "type": "RollingSum",
+      "init": "{period: number}",
+      "update": "x",
+      "output": "number"
+    },
+    {
+      "type": "SMA",
+      "init": "{period: number}",
+      "update": "x",
+      "output": "number"
+    },
+    {
+      "type": "EMA",
+      "init": "{period?: number, alpha?: number}",
+      "update": "x",
+      "output": "number"
+    },
+    {
+      "type": "EWMA",
+      "desc": "Sliding window average with exponential weighting",
+      "init": "{period: number}",
+      "update": "x",
+      "output": "number"
+    },
+    {
+      "type": "RollingVar",
+      "init": "{period: number, ddof?: number}",
+      "update": "x",
+      "output": "{mean, variance}"
+    },
+    {
+      "type": "RollingVarEW",
+      "init": "{period?: number, alpha?: number}",
+      "update": "x",
+      "output": "{mean, variance}"
+    },
+    {
+      "type": "RollingStddev",
+      "init": "{period: number, ddof?: number}",
+      "update": "x",
+      "output": "{mean, stddev}"
+    },
+    {
+      "type": "RollingStddevEW",
+      "init": "{period?: number, alpha?: number}",
+      "update": "x",
+      "output": "{mean, stddev}"
+    },
+    {
+      "type": "RollingZScore",
+      "init": "{period: number}",
+      "update": "x",
+      "output": "{mean, stddev, zscore}"
+    },
+    {
+      "type": "RollingZScoreEW",
+      "init": "{period?: number, alpha?: number}",
+      "update": "x",
+      "output": "{mean, stddev, zscore}"
+    },
+    {
+      "type": "RollingCov",
+      "init": "{period: number, ddof?: number}",
+      "update": "x, y",
+      "output": "{meanX, meanY, cov}"
+    },
+    {
+      "type": "RollingCovEW",
+      "init": "{period?: number, alpha?: number}",
+      "update": "x, y",
+      "output": "{meanX, meanY, cov}"
+    },
+    {
+      "type": "RollingCorr",
+      "init": "{period: number, ddof?: number}",
+      "update": "x, y",
+      "output": "{meanX, meanY, cov, corr}"
+    },
+    {
+      "type": "RollingCorrEW",
+      "init": "{period?: number, alpha?: number}",
+      "update": "x, y",
+      "output": "{meanX, meanY, cov, corr}"
+    },
+    {
+      "type": "RollingBeta",
+      "init": "{period: number, ddof?: number}",
+      "update": "x, y",
+      "output": "{meanX, meanY, cov, beta}"
+    },
+    {
+      "type": "RollingBetaEW",
+      "init": "{period?: number, alpha?: number}",
+      "update": "x, y",
+      "output": "{meanX, meanY, cov, beta}"
+    },
+    {
+      "type": "RollingMin",
+      "init": "{period: number}",
+      "update": "x",
+      "output": "number"
+    },
+    {
+      "type": "RollingMax",
+      "init": "{period: number}",
+      "update": "x",
+      "output": "number"
+    },
+    {
+      "type": "RollingMinMax",
+      "init": "{period: number}",
+      "update": "x",
+      "output": "{min, max}"
+    },
+    {
+      "type": "RollingArgMin",
+      "init": "{period: number}",
+      "update": "x",
+      "output": "{val, pos}"
+    },
+    {
+      "type": "RollingArgMax",
+      "init": "{period: number}",
+      "update": "x",
+      "output": "{val, pos}"
+    },
+    {
+      "type": "RollingArgMinMax",
+      "init": "{period: number}",
+      "update": "x",
+      "output": "{min: {val, pos}, max: {val, pos}}"
+    },
+    {
+      "type": "RollingSkew",
+      "init": "{period: number}",
+      "update": "x",
+      "output": "{mean, variance, skew}"
+    },
+    {
+      "type": "RollingKurt",
+      "init": "{period: number}",
+      "update": "x",
+      "output": "{mean, variance, kurt}"
+    },
+    {
+      "type": "MeanAbsDeviation",
+      "init": "{period: number}",
+      "update": "x",
+      "output": "{mean, mad}"
+    },
+    {
+      "type": "MedianAbsDeviation",
+      "init": "{period: number}",
+      "update": "x",
+      "output": "{median, mad} | undefined"
+    },
+    {
+      "type": "IQR",
+      "desc": "Interquartile Range",
+      "init": "{period: number}",
+      "update": "x",
+      "output": "{q1, q3, iqr} | null"
+    },
+    {
+      "type": "RollingMedian",
+      "init": "{period: number}",
+      "update": "x",
+      "output": "number | undefined"
+    },
+    {
+      "type": "RollingQuantile",
+      "init": "{period: number, quantiles: number[]}",
+      "update": "x",
+      "output": "number[] | undefined"
+    }
+  ]
+}
+
+## Root Data Type
+
+The root data event has the following structure:
+{open, high, low, close, volume}
+
+## GraphSchema Format
+
+Generate a JSON object with this structure:
+
+```json
+{
+  "root": string,        // Input node name (e.g., "tick", "price")
+  "nodes": [
+    {
+      "name": string,         // Unique node identifier
+      "type": string,         // Operator type from available operators
+      "init": object,         // Constructor parameters (optional)
+      "updateSource": string[] // Input paths (e.g., ["tick"], ["fast", "slow"], ["tick.close"])
+    }
+  ]
+}
+```
+
+## Rules
+
+1. **Root node**: External data entry point, typically "tick" or "price"
+2. **Input paths**: Reference nodes by name or path (e.g., "ema", "tick.close" for access nested fields)
+3. **No cycles**: DAG structure required
+4. **Match parameters**: Each node's updateSource must match its operator's update arity
+
+## Examples
+
+**Simple EMA**:
+root data event: {price: number, volume: number}
+```json
+{
+  "root": "tick",
+  "nodes": [
+    {
+      "name": "ema",
+      "type": "EMA",
+      "init": {"period": 20},
+      "updateSource": ["tick.price"]
+    }
+  ]
+}
+```
+
+**MACD (Moving Average Convergence Divergence)**:
+root data event: number
+```json
+{
+  "root": "price",
+  "nodes": [
+    {
+      "name": "fast",
+      "type": "EMA",
+      "init": {"period": 12},
+      "updateSource": ["price"]
+    },
+    {
+      "name": "slow",
+      "type": "EMA",
+      "init": {"period": 26},
+      "updateSource": ["price"]
+    },
+    {
+      "name": "macd",
+      "type": "Sub",
+      "updateSource": ["fast", "slow"]
+    }
+  ]
+}
+```
+
+## User Request
+
+An algorithm that captures shift of volatility, and if the moving direction is in favor, we should favor gamble on it. make the output 0~100 that 100 is strongly favorable. set the output name to my_signal.
+
+## Output
+
+Generate ONLY the GraphSchema JSON. Do not include explanations or markdown code blocks.

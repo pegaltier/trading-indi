@@ -4,7 +4,7 @@ import { EMA } from "../src/primitive/core-ops/rolling.js";
 import type { OperatorDoc } from "../src/types/OpDoc.js";
 
 describe("Graph JSON Serialization", () => {
-  it("should construct graph from JSON descriptor", async () => {
+  it("should construct graph from JSON descriptor", () => {
     const registry = new OpRegistry().register(EMA);
 
     const descriptor: GraphSchema = {
@@ -19,24 +19,18 @@ describe("Graph JSON Serialization", () => {
       ],
     };
 
-    const outputs: any[] = [];
     const g = Graph.fromJSON(descriptor, registry);
 
-    g.output((output) => {
-      outputs.push(output);
-    });
+    const out1 = g.update(100);
+    const out2 = g.update(200);
 
-    await g.update(100);
-    await g.update(200);
-
-    expect(outputs.length).toBe(2);
-    expect(outputs[0].tick).toBe(100);
-    expect(outputs[0].ema).toBeCloseTo(100);
-    expect(outputs[1].tick).toBe(200);
-    expect(outputs[1].ema).toBeCloseTo(166.67, 1);
+    expect(out1.tick).toBe(100);
+    expect(out1.ema).toBeCloseTo(100);
+    expect(out2.tick).toBe(200);
+    expect(out2.ema).toBeCloseTo(166.67, 1);
   });
 
-  it("should handle multiple nodes and dependencies", async () => {
+  it("should handle multiple nodes and dependencies", () => {
     const registry = new OpRegistry().register(EMA);
 
     const descriptor: GraphSchema = {
@@ -57,24 +51,18 @@ describe("Graph JSON Serialization", () => {
       ],
     };
 
-    const outputs: any[] = [];
     const g = Graph.fromJSON(descriptor, registry);
 
-    g.output((output) => {
-      outputs.push(output);
-    });
+    const out1 = g.update(100);
+    const out2 = g.update(200);
+    const out3 = g.update(300);
 
-    await g.update(100);
-    await g.update(200);
-    await g.update(300);
-
-    expect(outputs.length).toBe(3);
-    expect(outputs[0].fast).toBeCloseTo(100);
-    expect(outputs[1].fast).toBeCloseTo(166.67, 1);
-    expect(outputs[2].fast).toBeCloseTo(255.56, 1);
+    expect(out1.fast).toBeCloseTo(100);
+    expect(out2.fast).toBeCloseTo(166.67, 1);
+    expect(out3.fast).toBeCloseTo(255.56, 1);
   });
 
-  it("should support property access in input paths", async () => {
+  it("should support property access in input paths", () => {
     const registry = new OpRegistry().register(EMA);
 
     const descriptor: GraphSchema = {
@@ -89,23 +77,17 @@ describe("Graph JSON Serialization", () => {
       ],
     };
 
-    const outputs: any[] = [];
     const g = Graph.fromJSON(descriptor, registry);
 
-    g.output((output) => {
-      outputs.push(output);
-    });
+    const out1 = g.update({ price: 100, volume: 1000 });
+    const out2 = g.update({ price: 200, volume: 2000 });
 
-    await g.update({ price: 100, volume: 1000 });
-    await g.update({ price: 200, volume: 2000 });
-
-    expect(outputs.length).toBe(2);
-    expect(outputs[0].tick.price).toBe(100);
-    expect(outputs[0].ema).toBeCloseTo(100);
-    expect(outputs[1].ema).toBeCloseTo(166.67, 1);
+    expect(out1.tick.price).toBe(100);
+    expect(out1.ema).toBeCloseTo(100);
+    expect(out2.ema).toBeCloseTo(166.67, 1);
   });
 
-  it("should handle nodes with multiple dependencies", async () => {
+  it("should handle nodes with multiple dependencies", () => {
     class Subtract {
       static readonly doc: OperatorDoc = {
         type: "Subtract",
@@ -143,19 +125,13 @@ describe("Graph JSON Serialization", () => {
       ],
     };
 
-    const outputs: any[] = [];
     const g = Graph.fromJSON(descriptor, registry);
 
-    g.output((output) => {
-      outputs.push(output);
-    });
+    g.update(100);
+    g.update(200);
+    const out3 = g.update(300);
 
-    await g.update(100);
-    await g.update(200);
-    await g.update(300);
-
-    expect(outputs.length).toBe(3);
-    expect(outputs[2].diff).toBeCloseTo(outputs[2].fast - outputs[2].slow, 1);
+    expect(out3.diff).toBeCloseTo(out3.fast - out3.slow, 1);
   });
 
   it("should throw error for unknown type", () => {
@@ -178,7 +154,7 @@ describe("Graph JSON Serialization", () => {
     }).toThrow(/Unknown type "UnknownIndicator" for node "ema"/);
   });
 
-  it("should handle nodes without init params", async () => {
+  it("should handle nodes without init params", () => {
     class Identity {
       static readonly doc: OperatorDoc = {
         type: "Identity",
@@ -204,20 +180,13 @@ describe("Graph JSON Serialization", () => {
       ],
     };
 
-    const outputs: any[] = [];
     const g = Graph.fromJSON(descriptor, registry);
+    const out = g.update(42);
 
-    g.output((output) => {
-      outputs.push(output);
-    });
-
-    await g.update(42);
-
-    expect(outputs.length).toBe(1);
-    expect(outputs[0].identity).toBe(42);
+    expect(out.identity).toBe(42);
   });
 
-  it("should work with complex graph structures", async () => {
+  it("should work with complex graph structures", () => {
     class Multiply {
       static readonly doc: OperatorDoc = {
         type: "Multiply",
@@ -275,20 +244,14 @@ describe("Graph JSON Serialization", () => {
       ],
     };
 
-    const outputs: any[] = [];
     const g = Graph.fromJSON(descriptor, registry);
 
-    g.output((output) => {
-      outputs.push(output);
-    });
+    g.update(100);
+    g.update(200);
+    const out3 = g.update(300);
 
-    await g.update(100);
-    await g.update(200);
-    await g.update(300);
-
-    expect(outputs.length).toBe(3);
-    expect(outputs[2].fast).toBeGreaterThan(outputs[2].slow);
-    expect(outputs[2].diff).toBeCloseTo(outputs[2].fast - outputs[2].slow, 1);
-    expect(outputs[2].signal).toBeCloseTo(outputs[2].diff * outputs[2].fast, 1);
+    expect(out3.fast).toBeGreaterThan(out3.slow);
+    expect(out3.diff).toBeCloseTo(out3.fast - out3.slow, 1);
+    expect(out3.signal).toBeCloseTo(out3.diff * out3.fast, 1);
   });
 });

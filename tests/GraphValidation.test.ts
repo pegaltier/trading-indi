@@ -253,7 +253,8 @@ describe("Graph.validate() - runtime validation", () => {
     const node = {
       __isDagNode: true as const,
       inputPath: ["nonExistent"],
-      onData: (state: Record<string, any>) => ema.update(state.nonExistent),
+      predSatisfied: (state: Record<string, any>) =>
+        ema.update(state.nonExistent),
     };
 
     graph.addNode("ema", node);
@@ -274,12 +275,12 @@ describe("Graph.validate() - runtime validation", () => {
     const node1 = {
       __isDagNode: true as const,
       inputPath: ["tick"],
-      update: (state: Record<string, any>) => state.tick,
+      predSatisfied: (state: Record<string, any>) => state.tick,
     };
     const node2 = {
       __isDagNode: true as const,
       inputPath: ["node1"],
-      update: (state: Record<string, any>) => state.node1,
+      predSatisfied: (state: Record<string, any>) => state.node1,
     };
 
     graph.addNode("node1", node1);

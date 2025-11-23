@@ -1,4 +1,4 @@
-export { Graph, makeOp, type Op } from "./Graph.js";
+export { Graph } from "./Graph.js";
 export { OpRegistry } from "./Registry.js";
 export {
   type OpSchema,
