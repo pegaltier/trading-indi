@@ -1,12 +1,12 @@
-import type { OpRegistry } from "../flow/Registry.js";
-import type { GraphSchema } from "../flow/Schema.js";
+import type { OpRegistry } from "../../src/flow/Registry.js";
+import type { GraphSchema } from "../../src/flow/Schema.js";
 import {
   validateGraphSchema,
   formatValidationError,
   graphDiff,
   type GraphDiff,
-} from "../flow/Schema.js";
-import { Graph } from "../flow/Graph.js";
+} from "../../src/flow/Schema.js";
+import { Graph } from "../../src/flow/Graph.js";
 
 /**
  * Feedback loop using whole graph replacement.
@@ -410,7 +410,9 @@ export function generateFeedbackPrompt(
   }
 
   prompt += `Evaluation Results:\n`;
-  prompt += `- Passed: ${evalResult.testCases.length - failedTests.length}/${evalResult.testCases.length} tests\n`;
+  prompt += `- Passed: ${evalResult.testCases.length - failedTests.length}/${
+    evalResult.testCases.length
+  } tests\n`;
 
   if (evalResult.metrics) {
     prompt += `- Metrics: ${JSON.stringify(evalResult.metrics, null, 2)}\n`;
@@ -465,7 +467,9 @@ function formatReason(reason: FeedbackReason): string {
     case "optimization":
       return `Optimization Target: ${reason.target ?? "improve metrics"}`;
     case "structural_issue":
-      return `Structural Issues Detected:\n${reason.issues.map((i) => `- ${i.description}`).join("\n")}`;
+      return `Structural Issues Detected:\n${reason.issues
+        .map((i) => `- ${i.description}`)
+        .join("\n")}`;
   }
 }
 
@@ -509,8 +513,8 @@ export function getLoopStatistics(state: FeedbackLoopState): {
   // Calculate improvement trend
   let improvementTrend: number | undefined;
   if (state.history.length >= 2) {
-    const prev = state.history[state.history.length - 2]!.evalResult?.metrics
-      ?.accuracy;
+    const prev =
+      state.history[state.history.length - 2]!.evalResult?.metrics?.accuracy;
     const curr = lastAccuracy;
     if (prev !== undefined && curr !== undefined) {
       improvementTrend = curr - prev;

@@ -1,6 +1,6 @@
-import type { OpRegistry } from "../flow/Registry.js";
-import type { GraphSchema, GraphError } from "../flow/Schema.js";
-import { validateGraphSchema } from "../flow/Schema.js";
+import type { OpRegistry } from "../../src/flow/Registry.js";
+import type { GraphSchema, GraphError } from "../../src/flow/Schema.js";
+import { validateGraphSchema } from "../../src/flow/Schema.js";
 
 /**
  * Agent feedback action types.
