@@ -442,3 +442,32 @@ export {
   graphComplexity,
   graphDiff,
 } from "./flow/Schema.js";
+
+// ============================================================================
+// Namespace Exports
+// ============================================================================
+
+import * as _primitives from "./primitive/index.js";
+import * as _indicators from "./indicators/index.js";
+import * as _heuristics from "./heuristics/index.js";
+import * as _flow from "./flow/index.js";
+
+/**
+ * Primitive operators: arithmetic, logical, rolling windows, and online statistics
+ */
+export const primitives = _primitives;
+
+/**
+ * Technical indicators: moving averages, volatility, oscillators, momentum, trend, volume, and stochastic
+ */
+export const indicators = _indicators;
+
+/**
+ * Heuristic pattern recognition: candlestick patterns (single, two-bar, and multi-bar)
+ */
+export const heuristics = _heuristics;
+
+/**
+ * Flow control: graph execution and operator registry
+ */
+export const flow = _flow;
