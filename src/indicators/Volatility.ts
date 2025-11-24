@@ -45,7 +45,7 @@ export class Volatility {
 
   static readonly doc: OperatorDoc = {
     type: "Volatility",
-    init: "{period, annualizedDays?}",
+    init: "{period, annualizedDays: 250}",
     input: "close",
     output: "number",
   };
@@ -149,7 +149,7 @@ export class MASS {
 
   static readonly doc: OperatorDoc = {
     type: "MASS",
-    init: "{period?: number}",
+    init: "{period: 9}",
     input: "high, low",
     output: "number",
   };
@@ -367,7 +367,7 @@ export class BBANDS {
 
   static readonly doc: OperatorDoc = {
     type: "BBANDS",
-    init: "{period, Nstddev?}",
+    init: "{period, Nstddev: 2}",
     input: "close",
     output: "{upper, middle, lower}",
   };
@@ -433,7 +433,7 @@ export class KC {
 
   static readonly doc: OperatorDoc = {
     type: "KC",
-    init: "{period, multiplier?}",
+    init: "{period, multiplier: 2}",
     input: "high, low, close",
     output: "{upper, middle, lower}",
   };

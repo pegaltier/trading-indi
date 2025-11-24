@@ -22,7 +22,7 @@ export class CMA extends CoreCMA {
 export class CuVar extends CoreCuVar {
   static readonly doc: OperatorDoc = {
     type: "CuVar",
-    init: "{ddof?: number}",
+    init: "{ddof: 0}",
     input: "x",
     output: "{mean, variance}",
   };
@@ -31,7 +31,7 @@ export class CuVar extends CoreCuVar {
 export class CuStddev extends CoreCuStddev {
   static readonly doc: OperatorDoc = {
     type: "CuStddev",
-    init: "{ddof?: number}",
+    init: "{ddof: 0}",
     input: "x",
     output: "{mean, stddev}",
   };
@@ -56,7 +56,7 @@ export class CuKurt extends CoreCuKurt {
 export class CuCov extends CoreCuCov {
   static readonly doc: OperatorDoc = {
     type: "CuCov",
-    init: "{ddof?: number}",
+    init: "{ddof: 0}",
     input: "x, y",
     output: "{meanX, meanY, cov}",
   };
@@ -65,7 +65,7 @@ export class CuCov extends CoreCuCov {
 export class CuCorr extends CoreCuCorr {
   static readonly doc: OperatorDoc = {
     type: "CuCorr",
-    init: "{ddof?: number}",
+    init: "{ddof: 0}",
     input: "x, y",
     output: "{meanX, meanY, cov, corr}",
   };
@@ -74,7 +74,7 @@ export class CuCorr extends CoreCuCorr {
 export class CuBeta extends CoreCuBeta {
   static readonly doc: OperatorDoc = {
     type: "CuBeta",
-    init: "{ddof?: number}",
+    init: "{ddof: 0}",
     input: "x, y",
     output: "{meanX, meanY, cov, beta}",
   };

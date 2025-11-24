@@ -621,7 +621,7 @@ export function useRailroadTracks() {
 export class RisingWindow {
   static readonly doc: OperatorDoc = {
     type: "RisingWindow",
-    init: "{period?: number}",
+    init: "{period: 10}",
     input: "open, close, high, low",
     output: "boolean",
   };
@@ -678,7 +678,7 @@ export function useRisingWindow(opts?: PeriodWith<"period">) {
 export class FallingWindow {
   static readonly doc: OperatorDoc = {
     type: "FallingWindow",
-    init: "{period?: number}",
+    init: "{period: 10}",
     input: "open, close, high, low",
     output: "boolean",
   };

@@ -575,7 +575,7 @@ export class SAR {
 
   static readonly doc: OperatorDoc = {
     type: "SAR",
-    init: "{acceleration?, maximum?}",
+    init: "{acceleration: 0.02, maximum: 0.2}",
     input: "high, low",
     output: "number",
   };
@@ -749,7 +749,7 @@ export class ICHIMOKU {
 
   static readonly doc: OperatorDoc = {
     type: "ICHIMOKU",
-    init: "{tenkan_period?, kijun_period?, senkou_b_period?, displacement?}",
+    init: "{tenkan_period: 9, kijun_period: 26, senkou_b_period: 52, displacement: 26}",
     input: "high, low, close",
     output: "{tenkan, kijun, senkou_a, senkou_b, chikou}",
   };

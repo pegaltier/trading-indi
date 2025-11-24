@@ -62,7 +62,7 @@ export class STOCH {
 
   static readonly doc: OperatorDoc = {
     type: "STOCH",
-    init: "{k_period?, k_slowing?, d_period?}",
+    init: "{k_period: 14, k_slowing: 3, d_period: 3}",
     input: "high, low, close",
     output: "{k, d}",
   };

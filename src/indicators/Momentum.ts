@@ -478,7 +478,7 @@ export class TSI {
   static readonly doc: OperatorDoc = {
     type: "TSI",
     desc: "Trend Strength Index", // Agent: mistakes for True Strength Index
-    init: "{period_fast?: number, period_slow?: number, period_signal?: number}",
+    init: "{period_fast: 13, period_slow: 25, period_signal: 13}",
     input: "close",
     output: "{tsi, signal}",
   };

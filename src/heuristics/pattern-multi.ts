@@ -17,7 +17,7 @@ import type { OperatorDoc } from "../types/OpDoc.js";
 export class EveningStar {
   static readonly doc: OperatorDoc = {
     type: "EveningStar",
-    init: "{period?: number}",
+    init: "{period: 10}",
     input: "open, close, high, low",
     output: "boolean",
   };
@@ -99,7 +99,7 @@ export function useEveningStar(opts?: PeriodWith<"period">) {
 export class MorningDojiStar {
   static readonly doc: OperatorDoc = {
     type: "MorningDojiStar",
-    init: "{period?: number}",
+    init: "{period: 10}",
     input: "open, close, high, low",
     output: "boolean",
   };
@@ -181,7 +181,7 @@ export function useMorningDojiStar(opts?: PeriodWith<"period">) {
 export class EveningDojiStar {
   static readonly doc: OperatorDoc = {
     type: "EveningDojiStar",
-    init: "{period?: number}",
+    init: "{period: 10}",
     input: "open, close, high, low",
     output: "boolean",
   };
@@ -402,7 +402,7 @@ export function useAbandonedBabyBearish() {
 export class ThreeWhiteSoldiers {
   static readonly doc: OperatorDoc = {
     type: "ThreeWhiteSoldiers",
-    init: "{period?: number}",
+    init: "{period: 10}",
     input: "open, close, high, low",
     output: "boolean",
   };
@@ -496,7 +496,7 @@ export class ThreeWhiteSoldiers {
 export class ThreeBlackCrows {
   static readonly doc: OperatorDoc = {
     type: "ThreeBlackCrows",
-    init: "{period?: number}",
+    init: "{period: 10}",
     input: "open, close, high, low",
     output: "boolean",
   };
@@ -871,7 +871,7 @@ export function useThreeOutsideDown() {
 export class FakeyPatternBullish {
   static readonly doc: OperatorDoc = {
     type: "FakeyPatternBullish",
-    init: "{period?: number}",
+    init: "{period: 10}",
     input: "open, close, high, low",
     output: "boolean",
   };
@@ -953,7 +953,7 @@ export function useFakeyPatternBullish(opts?: PeriodWith<"period">) {
 export class FakeyPatternBearish {
   static readonly doc: OperatorDoc = {
     type: "FakeyPatternBearish",
-    init: "{period?: number}",
+    init: "{period: 10}",
     input: "open, close, high, low",
     output: "boolean",
   };
@@ -1037,7 +1037,7 @@ export function useFakeyPatternBearish(opts?: PeriodWith<"period">) {
 export class RisingThreeMethods {
   static readonly doc: OperatorDoc = {
     type: "RisingThreeMethods",
-    init: "{period?: number}",
+    init: "{period: 10}",
     input: "open, close, high, low",
     output: "boolean",
   };
@@ -1129,7 +1129,7 @@ export function useRisingThreeMethods(opts?: PeriodWith<"period">) {
 export class FallingThreeMethods {
   static readonly doc: OperatorDoc = {
     type: "FallingThreeMethods",
-    init: "{period?: number}",
+    init: "{period: 10}",
     input: "open, close, high, low",
     output: "boolean",
   };
