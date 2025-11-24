@@ -1,29 +1,34 @@
 # trading-indi
 
-A TypeScript library providing **80+ technical indicators** for trading, designed for **incremental, stateful calculation** perfect for intraday and realtime trading applications.
+A comprehensive TypeScript library for **incremental trading computations**, featuring **80+ technical indicators**, **candlestick pattern recognition**, **composable computation primitives**, and a powerful **DAG-based flow system** for building complex trading algorithms.
 
 ## Why trading-indi?
 
-Traditional technical indicator libraries recalculate entire datasets on each new data point. **trading-indi** is different:
+Traditional technical indicator libraries recalculate entire datasets on each new data point. **trading-indi** is a complete framework for building sophisticated trading algorithms:
 
-- **80+ Indicators**: Comprehensive coverage including Foundation, Volatility, Momentum, Oscillators, Stochastic, Trend, Volume, and Statistical indicators
-- **Incremental Calculation**: Each indicator maintains internal state and updates efficiently with each new data point
+- **80+ Technical Indicators**: Foundation, Statistics, Volatility, Momentum, Oscillators, Stochastic, Trend, and Volume indicators
+- **Pattern Recognition**: 10+ candlestick pattern heuristics (Doji, Hammer, Marubozu, etc.)
+- **Computation Primitives**: 40+ arithmetic and logical operators for custom calculations
+- **DAG Flow System**: Build complex multi-indicator strategies with topological execution
+- **Incremental Calculation**: Stateful, online algorithms that update efficiently with each tick
 - **Perfect for Realtime Trading**: Designed for WebSocket streams, tick data, and intraday strategies
 - **Memory Efficient**: Uses sliding windows and online algorithms
-- **Consistent API**: Every indicator follows the same class/hook pattern
+- **Consistent API**: Every operator follows the same class/hook pattern
 - **Zero Dependencies**: Clean, modern TypeScript
 
 ## Performance
 
-**trading-indi** is built for speed and efficiency, making it ideal for high-frequency trading applications:
+**trading-indi** is built for speed and efficiency, making it ideal for real-time trading applications:
 
 ### Benchmark Results
+
 - **Processing Speed**: 2+ million indicator calculations per second
 - **Latency**: ~0.03ms to process a single bar with all 64 indicators
 - **Memory Efficiency**: ~2.5KB per indicator instance
 - **Real-time Capability**: Can handle tick data (1000+ bars/second) with ease
 
 ### Real-time Trading Suitability
+
 All trading strategies tested are feasible for real-time trading:
 
 | Strategy | Indicators | Time per Bar | Max Bars/sec | Status |
@@ -47,6 +52,38 @@ npm install @junduck/trading-indi
 yarn add @junduck/trading-indi
 # or
 pnpm add @junduck/trading-indi
+```
+
+## Library Capabilities
+
+**trading-indi** is more than just an indicator library - it's a complete framework for building trading algorithms:
+
+| Capability | Components | Use Case |
+|------------|------------|----------|
+| **Technical Indicators** | 80+ indicators across 8 categories | Calculate standard technical indicators incrementally |
+| **Pattern Recognition** | 10+ candlestick patterns | Detect chart patterns in realtime |
+| **Computation Primitives** | 40+ arithmetic & logical operators | Build custom calculations and trading logic |
+| **DAG Flow System** | Graph, OpRegistry, Schema validation | Compose complex multi-indicator strategies with automatic dependency resolution |
+
+### Architecture Overview
+
+```text
+┌─────────────────────────────────────────────────────┐
+│                   Your Strategy                     │
+├─────────────────────────────────────────────────────┤
+│  DAG Flow System (Graph + OpRegistry)               │
+│  ├─ Topological execution                           │
+│  ├─ JSON serialization                              │
+│  └─ Forward reference resolution                    │
+├─────────────────────────────────────────────────────┤
+│  Operators (Stateful, Incremental)                  │
+│  ├─ Technical Indicators (80+)                      │
+│  ├─ Pattern Recognition (10+)                       │
+│  └─ Computation Primitives (40+)                    │
+├─────────────────────────────────────────────────────┤
+│  Foundation (from @junduck/trading-core)            │
+│  └─ Sliding windows, online algorithms              │
+└─────────────────────────────────────────────────────┘
 ```
 
 ## Quick Start
@@ -224,6 +261,218 @@ for (const bar of historicalData) {
 | **VROC** | `period` | `number` |
 | **PVT** | none | `number` |
 
+## Pattern Recognition Heuristics
+
+**trading-indi** includes candlestick pattern recognition for identifying common chart patterns:
+
+| Pattern | Parameters | Output | Description |
+|---------|------------|--------|-------------|
+| **Doji** | `dojiThres?` | `boolean` | Open and close at nearly the same price |
+| **LongLeggedDoji** | `period?` | `boolean` | Doji with very long shadows |
+| **DragonflyDoji** | `lowerShadowThres?`, `upperShadowThres?` | `boolean` | Doji with long lower shadow, no upper shadow |
+| **GravestoneDoji** | `upperShadowThres?`, `lowerShadowThres?` | `boolean` | Doji with long upper shadow, no lower shadow |
+| **SpinningTop** | `period?`, `rangeMultiplier?`, `bodyThres?` | `boolean` | Small body with long upper and lower shadows |
+| **MarubozuWhite** | `period?`, `shadowThres?` | `boolean` | Long white candle with minimal shadows |
+| **MarubozuBlack** | `period?`, `shadowThres?` | `boolean` | Long black candle with minimal shadows |
+| **Hammer** | `bodyThres?`, `lowerShadowThres?`, `upperShadowThres?` | `boolean` | Small body at top with long lower shadow |
+| **InvertedHammer** | `bodyThres?`, `upperShadowThres?`, `lowerShadowThres?` | `boolean` | Small body at bottom with long upper shadow |
+| **HighWave** | `period?`, `rangeMultiplier?`, `bodyThres?`, `shadowThres?` | `boolean` | Very long shadows in both directions with small body |
+
+### Example: Pattern Recognition
+
+```typescript
+import { Hammer, Doji, MarubozuWhite } from '@junduck/trading-indi';
+
+const hammer = new Hammer();
+const doji = new Doji();
+const marubozu = new MarubozuWhite();
+
+websocket.on('tick', (bar) => {
+  const isHammer = hammer.onData(bar);
+  const isDoji = doji.onData(bar);
+  const isMarubozu = marubozu.onData(bar);
+
+  if (isHammer) console.log('Hammer pattern detected - potential reversal');
+  if (isDoji) console.log('Doji pattern detected - indecision');
+  if (isMarubozu) console.log('Marubozu White - strong bullish momentum');
+});
+```
+
+## Computation Primitives
+
+Build custom calculations using composable primitive operators. These are the building blocks for creating complex trading logic in the DAG flow system.
+
+### Arithmetic Operators
+
+| Operator | Input | Output | Description |
+|----------|-------|--------|-------------|
+| **Add** | `lhs, rhs` | `number` | Addition |
+| **Sub** | `lhs, rhs` | `number` | Subtraction |
+| **Mul** | `lhs, rhs` | `number` | Multiplication |
+| **Div** | `lhs, rhs` | `number` | Division (safe from divide-by-zero) |
+| **Mod** | `lhs, rhs` | `number` | Modulo |
+| **Pow** | `base, exp` | `number` | Power |
+| **Min** | `lhs, rhs` | `number` | Minimum of two values |
+| **Max** | `lhs, rhs` | `number` | Maximum of two values |
+| **Negate** | `x` | `number` | Negation |
+| **Abs** | `x` | `number` | Absolute value |
+| **Sign** | `x` | `-1, 0, 1` | Sign of number |
+| **Floor** | `x` | `number` | Floor function |
+| **Ceil** | `x` | `number` | Ceiling function |
+| **Round** | `x` | `number` | Round to nearest integer |
+| **Sqrt** | `x` | `number` | Square root |
+| **Log** | `x` | `number` | Natural logarithm |
+| **Exp** | `x` | `number` | Exponential (e^x) |
+| **Log1p** | `x` | `number` | log(1 + x) |
+| **Expm1** | `x` | `number` | exp(x) - 1 |
+| **Reciprocal** | `x` | `number` | 1/x |
+| **Clamp** | `x, min, max` | `number` | Clamp value between min and max |
+| **Lerp** | `a, b, t` | `number` | Linear interpolation |
+| **InvLerp** | `a, b, v` | `number` | Inverse linear interpolation |
+| **SumOf** | `...inputs` | `number` | Sum of multiple values |
+| **ProdOf** | `...inputs` | `number` | Product of multiple values |
+| **AvgOf** | `...inputs` | `number` | Average of multiple values |
+| **MinOf** | `...inputs` | `number` | Minimum of multiple values |
+| **MaxOf** | `...inputs` | `number` | Maximum of multiple values |
+| **RelDist** | `a, b` | `number` | Relative distance: abs(a-b)/abs(b) |
+
+### Logical Operators
+
+| Operator | Input | Output | Description |
+|----------|-------|--------|-------------|
+| **LT** | `lhs, rhs` | `boolean` | Less than |
+| **GT** | `lhs, rhs` | `boolean` | Greater than |
+| **LTE** | `lhs, rhs` | `boolean` | Less than or equal |
+| **GTE** | `lhs, rhs` | `boolean` | Greater than or equal |
+| **EQ** | `lhs, rhs` | `boolean` | Equal |
+| **NEQ** | `lhs, rhs` | `boolean` | Not equal |
+| **Between** | `x, lo, hi` | `boolean` | Check if x is between lo and hi |
+| **Outside** | `x, lo, hi` | `boolean` | Check if x is outside lo and hi |
+| **And** | `lhs, rhs` | `boolean` | Logical AND |
+| **Or** | `lhs, rhs` | `boolean` | Logical OR |
+| **Not** | `x` | `boolean` | Logical NOT |
+| **Xor** | `lhs, rhs` | `boolean` | Logical XOR |
+| **AllOf** | `...inputs` | `boolean` | All inputs are true |
+| **AnyOf** | `...inputs` | `boolean` | Any input is true |
+| **NoneOf** | `...inputs` | `boolean` | No inputs are true |
+| **IsNaN** | `x` | `boolean` | Check if NaN |
+| **IsFinite** | `x` | `boolean` | Check if finite |
+| **IsPositive** | `x` | `boolean` | Check if positive |
+| **IsNegative** | `x` | `boolean` | Check if negative |
+| **IsZero** | `x` | `boolean` | Check if zero |
+| **IfThenElse** | `cond, thenVal, elseVal` | `T` | Conditional selection |
+| **Gate** | `cond, val` | `T \| undefined` | Pass value if condition is true |
+| **Coalesce** | `...inputs` | `T \| undefined` | Return first non-null value |
+
+## DAG Flow System
+
+The **Graph** and **OpRegistry** provide a powerful DAG (Directed Acyclic Graph) execution engine for building complex, composable trading strategies. Define your computation as a graph of operators with dependencies, and the system handles topological sorting and execution.
+
+### Key Features
+
+- **Topological Execution**: Automatically determines correct execution order
+- **Type Safety**: Zod-based schema validation
+- **JSON Serialization**: Save and load graphs as JSON
+- **Forward References**: Support for future node references
+- **High Performance**: Index-based adjacency lists, 2M+ ops/sec
+- **AI-Friendly**: Schema designed for AI agent code generation
+
+### Example: Multi-Indicator Strategy with DAG
+
+```typescript
+import { Graph, OpRegistry } from '@junduck/trading-indi';
+
+// Register all operators you want to use
+OpRegistry.registerDefaults();
+
+// Define your strategy as a graph
+const graph = new Graph('trading-strategy');
+
+// Input nodes
+graph.addNode('close', 'Input', []);
+graph.addNode('high', 'Input', []);
+graph.addNode('low', 'Input', []);
+
+// Calculate indicators
+graph.addNode('rsi', 'RSI', ['close'], { period: 14 });
+graph.addNode('ema20', 'EMA', ['close'], { period: 20 });
+graph.addNode('ema50', 'EMA', ['close'], { period: 50 });
+
+// Build trading logic with primitives
+graph.addNode('rsi_oversold', 'LT', ['rsi', 30]);  // RSI < 30
+graph.addNode('ema_bullish', 'GT', ['ema20', 'ema50']);  // EMA20 > EMA50
+graph.addNode('buy_signal', 'And', ['rsi_oversold', 'ema_bullish']);
+
+// Process streaming data
+websocket.on('tick', (bar) => {
+  graph.update('close', bar.close);
+  graph.update('high', bar.high);
+  graph.update('low', bar.low);
+
+  const buySignal = graph.read('buy_signal');
+  const rsi = graph.read('rsi');
+
+  if (buySignal) {
+    console.log(`BUY SIGNAL: RSI=${rsi}`);
+  }
+});
+
+// Serialize to JSON for storage or AI agent generation
+const schema = graph.exportSchema();
+console.log(JSON.stringify(schema, null, 2));
+
+// Load from JSON
+const restoredGraph = Graph.fromSchema(schema);
+```
+
+### Example: Complex Strategy with Multiple Outputs
+
+```typescript
+import { Graph, OpRegistry } from '@junduck/trading-indi';
+
+OpRegistry.registerDefaults();
+
+const graph = new Graph('advanced-strategy');
+
+// Inputs
+graph.addNode('bar', 'Input', []);
+
+// Multiple indicators
+graph.addNode('rsi', 'RSI', ['bar'], { period: 14 });
+graph.addNode('macd_result', 'MACD', ['bar'], {
+  period_fast: 12,
+  period_slow: 26,
+  period_signal: 9
+});
+graph.addNode('atr', 'ATR', ['bar'], { period: 14 });
+
+// Extract MACD components
+graph.addNode('macd_line', 'GetField', ['macd_result', 'macd']);
+graph.addNode('signal_line', 'GetField', ['macd_result', 'signal']);
+
+// Build complex conditions
+graph.addNode('rsi_bullish', 'Between', ['rsi', 30, 50]);
+graph.addNode('macd_crossover', 'GT', ['macd_line', 'signal_line']);
+graph.addNode('strong_signal', 'And', ['rsi_bullish', 'macd_crossover']);
+
+// Calculate position sizing based on ATR
+graph.addNode('atr_multiplier', 'Mul', ['atr', 2]);
+graph.addNode('position_size', 'Div', [1000, 'atr_multiplier']);
+
+// Update with streaming data
+for (const bar of streamingData) {
+  graph.update('bar', bar);
+
+  const signal = graph.read('strong_signal');
+  const posSize = graph.read('position_size');
+  const atr = graph.read('atr');
+
+  if (signal) {
+    console.log(`Entry Signal - Position Size: ${posSize}, Stop Loss: ${atr * 2}`);
+  }
+}
+```
+
 ## Real-World Example: Intraday Strategy
 
 ```typescript
@@ -297,6 +546,93 @@ const zscore = new ZSCORE({ period: 20 });
 const zValue = zscore.onData(price);
 ```
 
+## API Reference
+
+### Exports
+
+The library exports all its capabilities from the main package:
+
+```typescript
+// Technical Indicators (80+)
+import {
+  // Foundation
+  SMA, EMA, EWMA, Variance, Stddev, Min, Max, Sum, MinMax,
+
+  // Statistics
+  VarianceEW, Cov, Corr, Beta, ZSCORE, CORRELATION,
+
+  // Volatility
+  VOLATILITY, CVI, MASS, TR, ATR, NATR, PriceChannel, BBANDS, KC, DC,
+
+  // Momentum
+  BOP, MOM, ROC, ROCR, RSI, CMO, WAD, RVI, TSI, BBPOWER,
+
+  // Oscillators
+  AO, APO, DPO, Fisher, MACD, PPO, QSTICK, TRIX, ULTOSC,
+
+  // Stochastic
+  STOCH, STOCHRSI, WILLR,
+
+  // Trend
+  AROON, AROONOSC, CCI, VHF, DM, DI, DX, ADX, ADXR, SAR, VI, ICHIMOKU,
+
+  // Volume
+  AD, ADOSC, KVO, NVI, OBV, PVI, MFI, EMV, MarketFI, VOSC, CMF, CHO, PVO, FI, VROC, PVT
+} from '@junduck/trading-indi';
+
+// Pattern Recognition
+import {
+  Doji, LongLeggedDoji, DragonflyDoji, GravestoneDoji,
+  SpinningTop, MarubozuWhite, MarubozuBlack,
+  Hammer, InvertedHammer, HighWave
+} from '@junduck/trading-indi';
+
+// Computation Primitives
+import {
+  // Arithmetic
+  Add, Sub, Mul, Div, Mod, Pow, Min, Max,
+  Negate, Abs, Sign, Floor, Ceil, Round, Sqrt, Log, Exp,
+  Log1p, Expm1, Reciprocal, Clamp, Lerp, InvLerp,
+  SumOf, ProdOf, AvgOf, MinOf, MaxOf, RelDist,
+
+  // Logical
+  LT, GT, LTE, GTE, EQ, NEQ, Between, Outside,
+  And, Or, Not, Xor, AllOf, AnyOf, NoneOf,
+  IsNaN, IsFinite, IsPositive, IsNegative, IsZero,
+  IfThenElse, Gate, Coalesce
+} from '@junduck/trading-indi';
+
+// DAG Flow System
+import {
+  Graph, OpRegistry,
+  validateGraphSchema, formatValidationError, graphComplexity, graphDiff
+} from '@junduck/trading-indi';
+
+// Types
+import type {
+  NodeSchema, GraphSchema, GraphSchemaValidationResult, GraphError, GraphDiff,
+  BarData, BarWith, PeriodOptions
+} from '@junduck/trading-indi';
+```
+
+### Hook Pattern
+
+Every class-based operator has a corresponding functional hook:
+
+```typescript
+import { useRSI, useSMA, useHammer } from '@junduck/trading-indi';
+
+const getRSI = useRSI({ period: 14 });
+const getSMA = useSMA({ period: 20 });
+const isHammer = useHammer();
+
+for (const bar of data) {
+  const rsi = getRSI(bar);
+  const sma = getSMA(bar.close);
+  const hammer = isHammer(bar);
+}
+```
+
 ## Bar Data Types
 
 Most indicators accept `BarData` with these properties:
@@ -312,6 +648,131 @@ interface BarData {
 ```
 
 Each indicator only requires the fields it needs. Check TypeScript types for specific requirements.
+
+## Use Cases
+
+### 1. Realtime Trading Bot
+
+```typescript
+import { RSI, MACD, ATR, Hammer } from '@junduck/trading-indi';
+
+const rsi = new RSI({ period: 14 });
+const macd = new MACD({ period_fast: 12, period_slow: 26, period_signal: 9 });
+const atr = new ATR({ period: 14 });
+const hammer = new Hammer();
+
+websocket.on('message', (bar) => {
+  const rsiValue = rsi.onData(bar);
+  const macdData = macd.onData(bar);
+  const atrValue = atr.onData(bar);
+  const isHammer = hammer.onData(bar);
+
+  if (rsiValue < 30 && macdData.histogram > 0 && isHammer) {
+    placeOrder({
+      type: 'BUY',
+      stopLoss: bar.close - (atr * 2),
+      takeProfit: bar.close + (atr * 3)
+    });
+  }
+});
+```
+
+### 2. Backtesting Engine
+
+```typescript
+import { useSMA, useEMA, useRSI } from '@junduck/trading-indi';
+
+const getSMA = useSMA({ period: 50 });
+const getEMA = useEMA({ period: 20 });
+const getRSI = useRSI({ period: 14 });
+
+const results = historicalData.map(bar => ({
+  timestamp: bar.timestamp,
+  close: bar.close,
+  sma50: getSMA(bar.close),
+  ema20: getEMA(bar.close),
+  rsi: getRSI(bar)
+}));
+```
+
+### 3. Custom Indicator with DAG
+
+```typescript
+import { Graph, OpRegistry } from '@junduck/trading-indi';
+
+OpRegistry.registerDefaults();
+
+// Build a custom "Trend Strength" indicator
+const graph = new Graph('trend-strength');
+
+graph.addNode('close', 'Input', []);
+graph.addNode('ema20', 'EMA', ['close'], { period: 20 });
+graph.addNode('ema50', 'EMA', ['close'], { period: 50 });
+graph.addNode('rsi', 'RSI', ['close'], { period: 14 });
+graph.addNode('adx', 'ADX', ['bar'], { period: 14 });
+
+// Calculate trend strength: (EMA20 - EMA50) * RSI/100 * ADX/100
+graph.addNode('ema_diff', 'Sub', ['ema20', 'ema50']);
+graph.addNode('rsi_norm', 'Div', ['rsi', 100]);
+graph.addNode('adx_norm', 'Div', ['adx', 100]);
+graph.addNode('strength', 'Mul', ['ema_diff', 'rsi_norm']);
+graph.addNode('trend_strength', 'Mul', ['strength', 'adx_norm']);
+
+// Use it
+for (const bar of data) {
+  graph.update('close', bar.close);
+  graph.update('bar', bar);
+
+  const trendStrength = graph.read('trend_strength');
+  console.log(`Trend Strength: ${trendStrength}`);
+}
+```
+
+### 4. Multi-Asset Correlation Analysis
+
+```typescript
+import { Corr, Beta } from '@junduck/trading-indi';
+
+const correlation = new Corr({ period: 20 });
+const beta = new Beta({ period: 252 });
+
+for (let i = 0; i < assetPrices.length; i++) {
+  const corr = correlation.onData(assetPrices[i], benchmarkPrices[i]);
+  const betaValue = beta.onData(assetPrices[i], benchmarkPrices[i]);
+
+  console.log(`Correlation: ${corr.correlation}, Beta: ${betaValue.beta}`);
+}
+```
+
+## Summary
+
+**trading-indi** provides a complete framework for building incremental trading algorithms:
+
+| Category | Count | Highlights |
+|----------|-------|------------|
+| **Technical Indicators** | 80+ | SMA, EMA, RSI, MACD, ATR, BBANDS, ADX, Ichimoku, and more |
+| **Pattern Recognition** | 10+ | Doji, Hammer, Marubozu, Spinning Top, High Wave |
+| **Arithmetic Primitives** | 28 | Add, Sub, Mul, Div, Pow, Sqrt, Log, Clamp, Lerp, SumOf, AvgOf, etc. |
+| **Logical Primitives** | 23 | LT, GT, EQ, And, Or, Not, Between, IfThenElse, AllOf, AnyOf, etc. |
+| **Flow System** | 1 DAG engine | Graph, OpRegistry, Schema validation, JSON serialization |
+
+### Key Features
+
+- **Incremental Calculation**: All operators maintain state and update efficiently
+- **High Performance**: 2M+ operations/sec, suitable for tick data
+- **Memory Efficient**: Sliding windows and online algorithms
+- **Type Safe**: Full TypeScript support with strict typing
+- **Composable**: Build complex strategies from simple building blocks
+- **AI-Friendly**: OperatorDoc schema for AI agent code generation
+- **Zero Dependencies**: Clean, modern TypeScript
+
+### Getting Started
+
+1. **Simple indicator**: Use class-based or hook pattern for individual indicators
+2. **Pattern recognition**: Detect candlestick patterns in realtime
+3. **Custom calculations**: Combine primitives for custom logic
+4. **Complex strategies**: Use DAG flow system to compose multi-indicator strategies
+5. **Serialization**: Save/load strategies as JSON for portability
 
 ## Changelog
 
