@@ -8,11 +8,7 @@ import {
   GraphSchemaZod,
   formatValidationError,
 } from "../src/flow/Schema.js";
-import {
-  regFoundation,
-  regArithmeticPrimitive,
-  regLogicalPrimitive,
-} from "../src/flow/RegistryUtils.js";
+import { regCoreOps } from "../src/flow/RegistryUtils.js";
 
 // Load JSON file
 const __filename = fileURLToPath(import.meta.url);
@@ -44,9 +40,7 @@ console.log();
 
 // Create registry with operators
 const registry = new OpRegistry();
-regArithmeticPrimitive(registry);
-regLogicalPrimitive(registry);
-regFoundation(registry);
+regCoreOps(registry);
 
 console.log("Validating business logic (registry, cycles, dependencies)...");
 const schemaValidation = validateGraphSchema(graphSchema, registry);
@@ -76,7 +70,7 @@ if (!graphValidation.valid) {
     if (error.type === "cycle") {
       console.error(`  - Cycle detected: ${error.nodes.join(" -> ")}`);
     } else if (error.type === "unreachable") {
-      console.error(`  - Unreachable nodes: ${error.node.join(", ")}`);
+      console.error(`  - Unreachable nodes: ${error.nodes.join(", ")}`);
     }
   }
   process.exit(1);
@@ -96,12 +90,8 @@ const sampleTick = {
   volume: 10000,
 };
 
-graph.output((state) => {
-  console.log("Graph output:", state);
-});
-
 // Execute with sample data
-await graph.update(sampleTick);
+const output = graph.update(sampleTick);
 
 console.log();
 console.log("✓ Graph execution completed successfully");
