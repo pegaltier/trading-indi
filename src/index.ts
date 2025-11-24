@@ -301,8 +301,21 @@ export {
 // Indicators - Aggregation
 // ============================================================================
 
-export type { OHLCVBar, OHLCVTick } from "./indicators/Aggregate.js";
-export { OHLCV, useOHLCV } from "./indicators/Aggregate.js";
+export type { OHLCVBar, OHLCVTick } from "./aggregation/index.js";
+export { OHLCV, useOHLCV } from "./aggregation/index.js";
+
+// ============================================================================
+// Aggregation - Windows & Processors
+// ============================================================================
+
+export type { TumblingSpec } from "./aggregation/index.js";
+export {
+  TumblingWindow,
+  CounterWindow,
+  SessionWindow,
+  OHLCVProcessor,
+  StreamingAdapter,
+} from "./aggregation/index.js";
 
 // ============================================================================
 // Heuristics - Single Bar Patterns

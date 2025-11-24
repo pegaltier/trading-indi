@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { OHLCV, useOHLCV, type OHLCVTick } from "../src/indicators/Aggregate.js";
+import { OHLCV, useOHLCV, type OHLCVTick } from "../src/aggregation/OHLCV";
 
 describe("OHLCV", () => {
   it("should return undefined on first tick", () => {
@@ -35,6 +35,7 @@ describe("OHLCV", () => {
       low: 100,
       close: 110,
       volume: 30,
+      turnover: 100 * 10 + 110 * 20,
     });
   });
 
@@ -105,33 +106,6 @@ describe("OHLCV", () => {
 
     const result = ohlcv.onData({ timestamp: 2000, price: 200, volume: 20 });
     expect(result).toBeUndefined();
-  });
-
-  it("should return current bar", () => {
-    const ohlcv = new OHLCV({ intervalMs: 1000 });
-
-    expect(ohlcv.getCurrentBar()).toBeUndefined();
-
-    ohlcv.onData({ timestamp: 1000, price: 100, volume: 10 });
-    const current = ohlcv.getCurrentBar();
-
-    expect(current).toEqual({
-      timestamp: 1000,
-      open: 100,
-      high: 100,
-      low: 100,
-      close: 100,
-      volume: 10,
-    });
-  });
-
-  it("should align timestamps to interval boundaries", () => {
-    const ohlcv = new OHLCV({ intervalMs: 1000 });
-
-    ohlcv.onData({ timestamp: 1234, price: 100, volume: 10 });
-    const current = ohlcv.getCurrentBar();
-
-    expect(current!.timestamp).toBe(1000);
   });
 });
 

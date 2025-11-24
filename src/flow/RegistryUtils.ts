@@ -11,7 +11,7 @@ import * as indVolatility from "../indicators/Volatility.js";
 import * as indMomentum from "../indicators/Momentum.js";
 import * as indTrend from "../indicators/Trend.js";
 import * as indStochastic from "../indicators/Stochastic.js";
-import * as indAggregate from "../indicators/Aggregate.js";
+import * as indAggregate from "../aggregation/index.js";
 import * as indVolume from "../indicators/Volume.js";
 
 /**
