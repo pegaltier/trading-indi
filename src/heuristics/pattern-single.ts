@@ -18,10 +18,20 @@ export function isDoji(
 export class Doji {
   static readonly doc: OperatorDoc = {
     type: "Doji",
+    init: "{dojiThres: 0.02}",
     input: "open, close, high, low",
     output: "boolean",
   };
 
+  private thres: number;
+
+  constructor(
+    opts: { dojiThres?: number } = {
+      dojiThres: 0.02,
+    }
+  ) {
+    this.thres = opts.dojiThres ?? 0.02;
+  }
   /**
    * Check if the OHLC values form a Doji pattern
    * @param open - Opening price
@@ -31,7 +41,7 @@ export class Doji {
    * @returns True if the pattern is detected
    */
   update(open: number, close: number, high: number, low: number): boolean {
-    return isDoji({ open, close, high, low });
+    return isDoji({ open, close, high, low }, this.thres);
   }
 
   /**
@@ -54,7 +64,7 @@ export function useDoji() {
 export class LongLeggedDoji {
   static readonly doc: OperatorDoc = {
     type: "LongLeggedDoji",
-    init: "{period?: number}",
+    init: "{period: 10}",
     input: "open, close, high, low",
     output: "boolean",
   };
@@ -104,9 +114,23 @@ export function useLongLeggedDoji(opts?: PeriodWith<"period">) {
 export class DragonflyDoji {
   static readonly doc: OperatorDoc = {
     type: "DragonflyDoji",
+    init: "{lowerShadowThres: 0.6, upperShadowThres: 0.05}",
     input: "open, close, high, low",
     output: "boolean",
   };
+
+  private lowerShadowThres: number;
+  private upperShadowThres: number;
+
+  constructor(
+    opts: { lowerShadowThres?: number; upperShadowThres?: number } = {
+      lowerShadowThres: 0.6,
+      upperShadowThres: 0.05,
+    }
+  ) {
+    this.lowerShadowThres = opts.lowerShadowThres ?? 0.6;
+    this.upperShadowThres = opts.upperShadowThres ?? 0.05;
+  }
 
   /**
    * Check if the OHLC values form a Dragonfly Doji pattern
@@ -120,7 +144,10 @@ export class DragonflyDoji {
     if (!isDoji({ open, close, high, low })) return false;
 
     const range = high - low;
-    return open - low > range * 0.6 && high - open < range * 0.05;
+    return (
+      open - low > range * this.lowerShadowThres &&
+      high - open < range * this.upperShadowThres
+    );
   }
 
   /**
@@ -143,9 +170,23 @@ export function useDragonflyDoji() {
 export class GravestoneDoji {
   static readonly doc: OperatorDoc = {
     type: "GravestoneDoji",
+    init: "{upperShadowThres: 0.6, lowerShadowThres: 0.05}",
     input: "open, close, high, low",
     output: "boolean",
   };
+
+  private upperShadowThres: number;
+  private lowerShadowThres: number;
+
+  constructor(
+    opts: { upperShadowThres?: number; lowerShadowThres?: number } = {
+      upperShadowThres: 0.6,
+      lowerShadowThres: 0.05,
+    }
+  ) {
+    this.upperShadowThres = opts.upperShadowThres ?? 0.6;
+    this.lowerShadowThres = opts.lowerShadowThres ?? 0.05;
+  }
 
   /**
    * Check if the OHLC values form a Gravestone Doji pattern
@@ -159,7 +200,10 @@ export class GravestoneDoji {
     if (!isDoji({ open, close, high, low })) return false;
 
     const range = high - low;
-    return high - open > range * 0.6 && open - low < range * 0.05;
+    return (
+      high - open > range * this.upperShadowThres &&
+      open - low < range * this.lowerShadowThres
+    );
   }
 
   /**
@@ -172,8 +216,11 @@ export class GravestoneDoji {
   }
 }
 
-export function useGravestoneDoji() {
-  return new GravestoneDoji();
+export function useGravestoneDoji(opts?: {
+  upperShadowThres?: number;
+  lowerShadowThres?: number;
+}) {
+  return new GravestoneDoji(opts);
 }
 
 /**
@@ -182,19 +229,34 @@ export function useGravestoneDoji() {
 export class SpinningTop {
   static readonly doc: OperatorDoc = {
     type: "SpinningTop",
-    init: "{period?: number}",
+    init: "{period: 10, rangeMultiplier: 1.5, bodyThres: 0.3}",
     input: "open, close, high, low",
     output: "boolean",
   };
 
   private avgBodyLength: AverageBodyLength;
+  private rangeMultiplier: number;
+  private bodyThres: number;
 
   /**
    * @param opts - Configuration options
    * @param opts.period - Period for average body length calculation (default: 10)
+   * @param opts.rangeMultiplier - Multiplier for average body length to determine minimum range (default: 1.5)
+   * @param opts.bodyThres - Threshold for body size relative to range (default: 0.3)
    */
-  constructor(opts: PeriodWith<"period"> = { period: 10 }) {
+  constructor(
+    opts: PeriodWith<"period"> & {
+      rangeMultiplier?: number;
+      bodyThres?: number;
+    } = {
+      period: 10,
+      rangeMultiplier: 1.5,
+      bodyThres: 0.3,
+    }
+  ) {
     this.avgBodyLength = new AverageBodyLength(opts);
+    this.rangeMultiplier = opts.rangeMultiplier ?? 1.5;
+    this.bodyThres = opts.bodyThres ?? 0.3;
   }
 
   /**
@@ -209,7 +271,10 @@ export class SpinningTop {
     const range = high - low;
     const avgBody = this.avgBodyLength.update(open, close);
 
-    return range > avgBody * 1.5 && Math.abs(close - open) < range * 0.3;
+    return (
+      range > avgBody * this.rangeMultiplier &&
+      Math.abs(close - open) < range * this.bodyThres
+    );
   }
 
   /**
@@ -222,7 +287,9 @@ export class SpinningTop {
   }
 }
 
-export function useSpinningTop(opts?: PeriodWith<"period">) {
+export function useSpinningTop(
+  opts?: PeriodWith<"period"> & { rangeMultiplier?: number; bodyThres?: number }
+) {
   return new SpinningTop(opts);
 }
 
@@ -232,19 +299,27 @@ export function useSpinningTop(opts?: PeriodWith<"period">) {
 export class MarubozuWhite {
   static readonly doc: OperatorDoc = {
     type: "MarubozuWhite",
-    init: "{period?: number}",
+    init: "{period: 10, shadowThres: 0.05}",
     input: "open, close, high, low",
     output: "boolean",
   };
 
   private avgBodyLength: AverageBodyLength;
+  private shadowThres: number;
 
   /**
    * @param opts - Configuration options
    * @param opts.period - Period for average body length calculation (default: 10)
+   * @param opts.shadowThres - Threshold for shadow size relative to range (default: 0.05)
    */
-  constructor(opts: PeriodWith<"period"> = { period: 10 }) {
+  constructor(
+    opts: PeriodWith<"period"> & { shadowThres?: number } = {
+      period: 10,
+      shadowThres: 0.05,
+    }
+  ) {
     this.avgBodyLength = new AverageBodyLength(opts);
+    this.shadowThres = opts.shadowThres ?? 0.05;
   }
 
   /**
@@ -262,8 +337,8 @@ export class MarubozuWhite {
     const avgBody = this.avgBodyLength.update(open, close);
 
     return (
-      high - close < range * 0.05 && // Changed from 0.02 to 0.05 (5% instead of 2%)
-      low - open < range * 0.05 && // Changed from 0.02 to 0.05 (5% instead of 2%)
+      high - close < range * this.shadowThres &&
+      low - open < range * this.shadowThres &&
       close - open > avgBody
     );
   }
@@ -278,7 +353,9 @@ export class MarubozuWhite {
   }
 }
 
-export function useMarubozuWhite(opts?: PeriodWith<"period">) {
+export function useMarubozuWhite(
+  opts?: PeriodWith<"period"> & { shadowThres?: number }
+) {
   return new MarubozuWhite(opts);
 }
 
@@ -288,19 +365,27 @@ export function useMarubozuWhite(opts?: PeriodWith<"period">) {
 export class MarubozuBlack {
   static readonly doc: OperatorDoc = {
     type: "MarubozuBlack",
-    init: "{period?: number}",
+    init: "{period: 10, shadowThres: 0.05}",
     input: "open, close, high, low",
     output: "boolean",
   };
 
   private avgBodyLength: AverageBodyLength;
+  private shadowThres: number;
 
   /**
    * @param opts - Configuration options
    * @param opts.period - Period for average body length calculation (default: 10)
+   * @param opts.shadowThres - Threshold for shadow size relative to range (default: 0.05)
    */
-  constructor(opts: PeriodWith<"period"> = { period: 10 }) {
+  constructor(
+    opts: PeriodWith<"period"> & { shadowThres?: number } = {
+      period: 10,
+      shadowThres: 0.05,
+    }
+  ) {
     this.avgBodyLength = new AverageBodyLength(opts);
+    this.shadowThres = opts.shadowThres ?? 0.05;
   }
 
   /**
@@ -318,8 +403,8 @@ export class MarubozuBlack {
     const avgBody = this.avgBodyLength.update(open, close);
 
     return (
-      high - open < range * 0.05 && // Changed from 0.02 to 0.05 (5% instead of 2%)
-      low - close < range * 0.05 && // Changed from 0.02 to 0.05 (5% instead of 2%)
+      high - open < range * this.shadowThres &&
+      low - close < range * this.shadowThres &&
       open - close > avgBody
     );
   }
@@ -334,7 +419,9 @@ export class MarubozuBlack {
   }
 }
 
-export function useMarubozuBlack(opts?: PeriodWith<"period">) {
+export function useMarubozuBlack(
+  opts?: PeriodWith<"period"> & { shadowThres?: number }
+) {
   return new MarubozuBlack(opts);
 }
 
@@ -345,9 +432,30 @@ export function useMarubozuBlack(opts?: PeriodWith<"period">) {
 export class Hammer {
   static readonly doc: OperatorDoc = {
     type: "Hammer",
+    init: "{bodyThres: 0.3, lowerShadowThres: 0.6, upperShadowThres: 0.1}",
     input: "open, close, high, low",
     output: "boolean",
   };
+
+  private bodyThres: number;
+  private lowerShadowThres: number;
+  private upperShadowThres: number;
+
+  constructor(
+    opts: {
+      bodyThres?: number;
+      lowerShadowThres?: number;
+      upperShadowThres?: number;
+    } = {
+      bodyThres: 0.3,
+      lowerShadowThres: 0.6,
+      upperShadowThres: 0.1,
+    }
+  ) {
+    this.bodyThres = opts.bodyThres ?? 0.3;
+    this.lowerShadowThres = opts.lowerShadowThres ?? 0.6;
+    this.upperShadowThres = opts.upperShadowThres ?? 0.1;
+  }
 
   /**
    * Check if the OHLC values form a Hammer pattern
@@ -363,9 +471,9 @@ export class Hammer {
     const bodyBottom = Math.min(open, close);
 
     return (
-      Math.abs(close - open) < range * 0.3 &&
-      bodyBottom - low > range * 0.6 &&
-      high - bodyTop < range * 0.1
+      Math.abs(close - open) < range * this.bodyThres &&
+      bodyBottom - low > range * this.lowerShadowThres &&
+      high - bodyTop < range * this.upperShadowThres
     );
   }
 
@@ -379,8 +487,12 @@ export class Hammer {
   }
 }
 
-export function useHammer() {
-  return new Hammer();
+export function useHammer(opts?: {
+  bodyThres?: number;
+  lowerShadowThres?: number;
+  upperShadowThres?: number;
+}) {
+  return new Hammer(opts);
 }
 
 /**
@@ -390,9 +502,30 @@ export function useHammer() {
 export class InvertedHammer {
   static readonly doc: OperatorDoc = {
     type: "InvertedHammer",
+    init: "{bodyThres: 0.3, upperShadowThres: 0.6, lowerShadowThres: 0.1}",
     input: "open, close, high, low",
     output: "boolean",
   };
+
+  private bodyThres: number;
+  private upperShadowThres: number;
+  private lowerShadowThres: number;
+
+  constructor(
+    opts: {
+      bodyThres?: number;
+      upperShadowThres?: number;
+      lowerShadowThres?: number;
+    } = {
+      bodyThres: 0.3,
+      upperShadowThres: 0.6,
+      lowerShadowThres: 0.1,
+    }
+  ) {
+    this.bodyThres = opts.bodyThres ?? 0.3;
+    this.upperShadowThres = opts.upperShadowThres ?? 0.6;
+    this.lowerShadowThres = opts.lowerShadowThres ?? 0.1;
+  }
 
   /**
    * Check if the OHLC values form an Inverted Hammer pattern
@@ -408,9 +541,9 @@ export class InvertedHammer {
     const bodyBottom = Math.min(open, close);
 
     return (
-      Math.abs(close - open) < range * 0.3 &&
-      high - bodyTop > range * 0.6 &&
-      bodyBottom - low < range * 0.1
+      Math.abs(close - open) < range * this.bodyThres &&
+      high - bodyTop > range * this.upperShadowThres &&
+      bodyBottom - low < range * this.lowerShadowThres
     );
   }
 
@@ -424,8 +557,12 @@ export class InvertedHammer {
   }
 }
 
-export function useInvertedHammer() {
-  return new InvertedHammer();
+export function useInvertedHammer(opts?: {
+  bodyThres?: number;
+  upperShadowThres?: number;
+  lowerShadowThres?: number;
+}) {
+  return new InvertedHammer(opts);
 }
 
 /**
@@ -434,19 +571,39 @@ export function useInvertedHammer() {
 export class HighWave {
   static readonly doc: OperatorDoc = {
     type: "HighWave",
-    init: "{period?: number}",
+    init: "{period: 10, rangeMultiplier: 2, bodyThres: 0.2, shadowThres: 0.3}",
     input: "open, close, high, low",
     output: "boolean",
   };
 
   private avgBodyLength: AverageBodyLength;
+  private rangeMultiplier: number;
+  private bodyThres: number;
+  private shadowThres: number;
 
   /**
    * @param opts - Configuration options
    * @param opts.period - Period for average body length calculation (default: 10)
+   * @param opts.rangeMultiplier - Multiplier for average body length to determine minimum range (default: 2)
+   * @param opts.bodyThres - Threshold for body size relative to range (default: 0.2)
+   * @param opts.shadowThres - Threshold for shadow size relative to range (default: 0.3)
    */
-  constructor(opts: PeriodWith<"period"> = { period: 10 }) {
+  constructor(
+    opts: PeriodWith<"period"> & {
+      rangeMultiplier?: number;
+      bodyThres?: number;
+      shadowThres?: number;
+    } = {
+      period: 10,
+      rangeMultiplier: 2,
+      bodyThres: 0.2,
+      shadowThres: 0.3,
+    }
+  ) {
     this.avgBodyLength = new AverageBodyLength(opts);
+    this.rangeMultiplier = opts.rangeMultiplier ?? 2;
+    this.bodyThres = opts.bodyThres ?? 0.2;
+    this.shadowThres = opts.shadowThres ?? 0.3;
   }
 
   /**
@@ -464,10 +621,10 @@ export class HighWave {
     const avgBody = this.avgBodyLength.update(open, close);
 
     return (
-      range > avgBody * 2 &&
-      Math.abs(close - open) < range * 0.2 &&
-      high - bodyTop > range * 0.3 &&
-      bodyBottom - low > range * 0.3
+      range > avgBody * this.rangeMultiplier &&
+      Math.abs(close - open) < range * this.bodyThres &&
+      high - bodyTop > range * this.shadowThres &&
+      bodyBottom - low > range * this.shadowThres
     );
   }
 
@@ -481,6 +638,12 @@ export class HighWave {
   }
 }
 
-export function useHighWave(opts?: PeriodWith<"period">) {
+export function useHighWave(
+  opts?: PeriodWith<"period"> & {
+    rangeMultiplier?: number;
+    bodyThres?: number;
+    shadowThres?: number;
+  }
+) {
   return new HighWave(opts);
 }
