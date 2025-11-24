@@ -1,8 +1,143 @@
-export type { PeriodOptions } from "./types/PeriodOptions.js";
-export type { BarData, BarWith } from "./types/BarData.js";
+// ============================================================================
+// Types
+// ============================================================================
 
-export { SMA, EMA, EWMA } from "./primitive/core-ops/rolling.js";
+export type { PeriodOptions, PeriodWith } from "./types/PeriodOptions.js";
+export type { BarData, BarWith } from "./types/BarData.js";
+export type { OperatorDoc } from "./types/OpDoc.js";
+
+// ============================================================================
+// Primitives - Constants
+// ============================================================================
+
+export { Const } from "./primitive/Const.js";
+
+// ============================================================================
+// Primitives - Arithmetic Operators
+// ============================================================================
+
+export {
+  Add,
+  Sub,
+  Mul,
+  Div,
+  Mod,
+  Pow,
+  Min,
+  Max,
+  Negate,
+  Abs,
+  Sign,
+  Floor,
+  Ceil,
+  Round,
+  Sqrt,
+  Log,
+  Exp,
+  Log1p,
+  Expm1,
+  Reciprocal,
+  Clamp,
+  Lerp,
+  InvLerp,
+  SumOf,
+  ProdOf,
+  AvgOf,
+  MinOf,
+  MaxOf,
+  RelDist,
+} from "./primitive/arithmetic.js";
+
+// ============================================================================
+// Primitives - Logical Operators
+// ============================================================================
+
+export {
+  LT,
+  GT,
+  LTE,
+  GTE,
+  EQ,
+  NEQ,
+  Between,
+  Outside,
+  And,
+  Or,
+  Not,
+  Xor,
+  AllOf,
+  AnyOf,
+  NoneOf,
+  IsNaN,
+  IsFinite,
+  IsPositive,
+  IsNegative,
+  IsZero,
+  IfThenElse,
+  Gate,
+  Coalesce,
+} from "./primitive/logical.js";
+
+// ============================================================================
+// Primitives - Rolling Window Operators
+// ============================================================================
+
+export {
+  SMA,
+  EMA,
+  EWMA,
+  RollingSum,
+  RollingVar,
+  RollingVarEW,
+  RollingStddev,
+  RollingStddevEW,
+  RollingZScore,
+  RollingZScoreEW,
+  RollingCov,
+  RollingCovEW,
+  RollingCorr,
+  RollingCorrEW,
+  RollingBeta,
+  RollingBetaEW,
+  RollingMin,
+  RollingMax,
+  RollingMinMax,
+  RollingArgMin,
+  RollingArgMax,
+  RollingArgMinMax,
+  RollingMedian,
+  RollingQuantile,
+  RollingSkew,
+  RollingKurt,
+  MeanAbsDeviation,
+  MedianAbsDeviation,
+  IQR,
+} from "./primitive/core-ops/rolling.js";
+
+// ============================================================================
+// Primitives - Online (Cumulative) Operators
+// ============================================================================
+
+export {
+  CMA,
+  CuVar,
+  CuStddev,
+  CuSkew,
+  CuKurt,
+  CuCov,
+  CuCorr,
+  CuBeta,
+} from "./primitive/core-ops/online.js";
+
+// ============================================================================
+// Indicators - Moving Averages
+// ============================================================================
+
 export { useSMA, useEMA, useEWMA } from "./indicators/MovingAvg.js";
+
+// ============================================================================
+// Indicators - Volatility
+// ============================================================================
 
 export {
   Volatility,
@@ -27,6 +162,10 @@ export {
   useDC,
 } from "./indicators/Volatility.js";
 
+// ============================================================================
+// Indicators - Oscillators
+// ============================================================================
+
 export {
   AO,
   useAO,
@@ -48,6 +187,10 @@ export {
   useULTOSC,
 } from "./indicators/Oscillators.js";
 
+// ============================================================================
+// Indicators - Stochastic
+// ============================================================================
+
 export {
   STOCH,
   useSTOCH,
@@ -56,6 +199,10 @@ export {
   WILLR,
   useWILLR,
 } from "./indicators/Stochastic.js";
+
+// ============================================================================
+// Indicators - Trend
+// ============================================================================
 
 export {
   AROON,
@@ -83,6 +230,10 @@ export {
   ICHIMOKU,
   useICHIMOKU,
 } from "./indicators/Trend.js";
+
+// ============================================================================
+// Indicators - Volume
+// ============================================================================
 
 export {
   AD,
@@ -119,6 +270,10 @@ export {
   usePVT,
 } from "./indicators/Volume.js";
 
+// ============================================================================
+// Indicators - Momentum
+// ============================================================================
+
 export {
   BOP,
   useBOP,
@@ -141,3 +296,136 @@ export {
   BBPOWER,
   useBBPOWER,
 } from "./indicators/Momentum.js";
+
+// ============================================================================
+// Indicators - Aggregation
+// ============================================================================
+
+export type { OHLCVBar, OHLCVTick } from "./indicators/Aggregate.js";
+export { OHLCV, useOHLCV } from "./indicators/Aggregate.js";
+
+// ============================================================================
+// Heuristics - Single Bar Patterns
+// ============================================================================
+
+export {
+  Doji,
+  useDoji,
+  LongLeggedDoji,
+  useLongLeggedDoji,
+  DragonflyDoji,
+  useDragonflyDoji,
+  GravestoneDoji,
+  useGravestoneDoji,
+  SpinningTop,
+  useSpinningTop,
+  MarubozuWhite,
+  useMarubozuWhite,
+  MarubozuBlack,
+  useMarubozuBlack,
+  Hammer,
+  useHammer,
+  InvertedHammer,
+  useInvertedHammer,
+  HighWave,
+  useHighWave,
+} from "./heuristics/pattern-single.js";
+
+// ============================================================================
+// Heuristics - Two Bar Patterns
+// ============================================================================
+
+export {
+  BearishEngulfing,
+  useBearishEngulfing,
+  BullishHarami,
+  useBullishHarami,
+  BearishHarami,
+  useBearishHarami,
+  HaramiCross,
+  useHaramiCross,
+  PiercingPattern,
+  usePiercingPattern,
+  DarkCloudCover,
+  useDarkCloudCover,
+  TweezerTops,
+  TweezerBottoms,
+  BullishDojiStar,
+  useBullishDojiStar,
+  BearishDojiStar,
+  useBearishDojiStar,
+  InsideBar,
+  useInsideBar,
+  OutsideBar,
+  useOutsideBar,
+  RailroadTracks,
+  useRailroadTracks,
+  RisingWindow,
+  useRisingWindow,
+  FallingWindow,
+  useFallingWindow,
+} from "./heuristics/pattern-two.js";
+
+// Note: TweezerTops and TweezerBottoms don't have use functions
+
+// ============================================================================
+// Heuristics - Multi Bar Patterns
+// ============================================================================
+
+export {
+  EveningStar,
+  useEveningStar,
+  MorningDojiStar,
+  useMorningDojiStar,
+  EveningDojiStar,
+  useEveningDojiStar,
+  AbandonedBabyBullish,
+  useAbandonedBabyBullish,
+  AbandonedBabyBearish,
+  useAbandonedBabyBearish,
+  ThreeWhiteSoldiers,
+  ThreeBlackCrows,
+  ThreeInsideUp,
+  useThreeInsideUp,
+  ThreeInsideDown,
+  useThreeInsideDown,
+  ThreeOutsideUp,
+  useThreeOutsideUp,
+  ThreeOutsideDown,
+  useThreeOutsideDown,
+  FakeyPatternBullish,
+  useFakeyPatternBullish,
+  FakeyPatternBearish,
+  useFakeyPatternBearish,
+  RisingThreeMethods,
+  useRisingThreeMethods,
+  FallingThreeMethods,
+  useFallingThreeMethods,
+  ThreeBuddhaTop,
+  InvertedThreeBuddha,
+  useInvertedThreeBuddha,
+} from "./heuristics/pattern-multi.js";
+
+// Note: ThreeWhiteSoldiers, ThreeBlackCrows, and ThreeBuddhaTop don't have use functions
+
+// ============================================================================
+// Flow - Graph & Registry
+// ============================================================================
+
+export { Graph } from "./flow/Graph.js";
+export { OpRegistry } from "./flow/Registry.js";
+export type {
+  NodeSchema,
+  GraphSchema,
+  GraphSchemaValidationResult,
+  GraphError,
+  GraphDiff,
+} from "./flow/Schema.js";
+export {
+  NodeSchemaZod,
+  GraphSchemaZod,
+  validateGraphSchema,
+  formatValidationError,
+  graphComplexity,
+  graphDiff,
+} from "./flow/Schema.js";
