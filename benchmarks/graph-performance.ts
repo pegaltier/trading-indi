@@ -1,7 +1,7 @@
 /**
  * Benchmark: DAG Execution Overhead
  *
- * This benchmark measures the OVERHEAD of the Graph execution engine,
+ * This benchmark measures the OVERHEAD of the GraphExec execution engine,
  * NOT the performance of individual indicators.
  *
  * Uses trivial operations (Add, Multiply, Subtract, Divide) to isolate
@@ -15,7 +15,7 @@
  * Real indicator performance depends on the complexity of the indicators used.
  */
 
-import { Graph } from "../src/flow/index.js";
+import { GraphExec } from "../src/flow/index.js";
 import { EMA, SMA } from "@junduck/trading-core";
 
 // Trivial computation nodes
@@ -46,8 +46,8 @@ class Divide {
 }
 
 // Build graph with ~50 nodes
-function buildGraph(): Graph {
-  const graph = new Graph("tick");
+function buildGraph(): GraphExec {
+  const graph = new GraphExec("tick");
 
   // Layer 1: 10 EMAs with different periods
   for (let i = 0; i < 10; i++) {
@@ -107,7 +107,7 @@ function runBenchmark() {
   console.log("DAG Execution Overhead Benchmark");
   console.log("=".repeat(60));
   console.log("");
-  console.log("NOTE: This measures Graph execution overhead only.");
+  console.log("NOTE: This measures GraphExec execution overhead only.");
   console.log("      Trivial nodes used to isolate DAG machinery cost.");
   console.log("      Real performance depends on indicator complexity.");
   console.log("");

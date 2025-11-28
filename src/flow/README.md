@@ -12,7 +12,7 @@ Traditional trading systems chain indicators in sequence, requiring explicit con
 
 ## Core Concepts
 
-- **Graph**: Synchronous DAG that executes nodes in topological order - simple, fast, race-free
+- **GraphExec**: Synchronous DAG that executes nodes in topological order - simple, fast, race-free
 - **AsyncGraph**: Async DAG with event listeners for reactive monitoring
 - **Operator**: Any object with `onData()` method - indicators, transformations, aggregators
 - **Root**: Entry point that receives external data
@@ -20,13 +20,13 @@ Traditional trading systems chain indicators in sequence, requiring explicit con
 
 ## Basic Usage
 
-### Synchronous Graph (Recommended)
+### Synchronous GraphExec (Recommended)
 
 ```typescript
-import { Graph } from "@junduck/trading-indi/flow";
+import { GraphExec } from "@junduck/trading-indi/flow";
 import { EMA } from "@junduck/trading-indi";
 
-const graph = new Graph("tick");
+const graph = new GraphExec("tick");
 
 graph
   .add("fast", new EMA({ period: 12 }))
@@ -42,7 +42,7 @@ console.log(state.fast, state.slow);
 ### JSON Configuration
 
 ```typescript
-import { Graph, OpRegistry, GraphSchema } from "@junduck/trading-indi/flow";
+import { GraphExec, OpRegistry, GraphSchema } from "@junduck/trading-indi/flow";
 import { EMA, SMA } from "@junduck/trading-indi";
 
 // Register operators
@@ -70,7 +70,7 @@ const config: GraphSchema = {
 };
 
 // Construct and execute
-const graph = Graph.fromJSON(config, registry);
+const graph = GraphExec.fromJSON(config, registry);
 const state = graph.update({ price: 100, volume: 1000 });
 console.log(state.ema, state.sma);
 ```
@@ -141,7 +141,7 @@ class EveryN {
 
 ### Observing State
 
-With synchronous `Graph`, read the returned state object:
+With synchronous `GraphExec`, read the returned state object:
 
 ```typescript
 const state = graph.update(tick);
@@ -163,7 +163,7 @@ Events are emitted only when operators produce non-undefined results.
 
 ## API Reference
 
-### Graph (Synchronous)
+### GraphExec (Synchronous)
 
 - `constructor(rootNode: string)` - Create graph with root node
 - `add(name, operator)` - Add operator and get NodeBuilder
@@ -211,7 +211,7 @@ interface GraphSchema {
 1. **Declarative**: Describe what you want, not how to compute it
 2. **Race-free**: Synchronous execution prevents state corruption in stateful indicators
 3. **Composable**: Mix stateful indicators with stateless transformations
-4. **Simple**: Synchronous `Graph` returns state directly - no promises, callbacks, or complexity
+4. **Simple**: Synchronous `GraphExec` returns state directly - no promises, callbacks, or complexity
 5. **Flexible**: Use `AsyncGraph` when you need event listeners or async I/O
 6. **Portable**: Save and share graph configurations as JSON
 7. **Versionable**: Track changes to trading strategies in version control
@@ -311,7 +311,7 @@ priceStream.on('tick', async (price) => {
 
 ### The Solution
 
-Both `Graph` and `AsyncGraph` execute all computation **synchronously** in topological order:
+Both `GraphExec` and `AsyncGraph` execute all computation **synchronously** in topological order:
 
 ```typescript
 // Synchronous - simple and fast

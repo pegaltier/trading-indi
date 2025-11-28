@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { Graph, OpRegistry, type GraphSchema } from "../src/flow/index.js";
+import { GraphExec, OpRegistry, type FlowGraph } from "../src/flow/index.js";
 import { EMA } from "../src/primitive/core-ops/rolling.js";
 import type { OperatorDoc } from "../src/types/OpDoc.js";
 
-describe("Graph JSON Serialization", () => {
+describe("GraphExec JSON Serialization", () => {
   it("should construct graph from JSON descriptor", () => {
     const registry = new OpRegistry().register(EMA);
 
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "tick",
       nodes: [
         {
@@ -19,7 +19,7 @@ describe("Graph JSON Serialization", () => {
       ],
     };
 
-    const g = Graph.fromJSON(descriptor, registry);
+    const g = GraphExec.fromJSON(descriptor, registry);
 
     const out1 = g.update(100);
     const out2 = g.update(200);
@@ -33,7 +33,7 @@ describe("Graph JSON Serialization", () => {
   it("should handle multiple nodes and dependencies", () => {
     const registry = new OpRegistry().register(EMA);
 
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "tick",
       nodes: [
         {
@@ -51,7 +51,7 @@ describe("Graph JSON Serialization", () => {
       ],
     };
 
-    const g = Graph.fromJSON(descriptor, registry);
+    const g = GraphExec.fromJSON(descriptor, registry);
 
     const out1 = g.update(100);
     const out2 = g.update(200);
@@ -65,7 +65,7 @@ describe("Graph JSON Serialization", () => {
   it("should support property access in input paths", () => {
     const registry = new OpRegistry().register(EMA);
 
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "tick",
       nodes: [
         {
@@ -77,7 +77,7 @@ describe("Graph JSON Serialization", () => {
       ],
     };
 
-    const g = Graph.fromJSON(descriptor, registry);
+    const g = GraphExec.fromJSON(descriptor, registry);
 
     const out1 = g.update({ price: 100, volume: 1000 });
     const out2 = g.update({ price: 200, volume: 2000 });
@@ -102,7 +102,7 @@ describe("Graph JSON Serialization", () => {
 
     const registry = new OpRegistry().register(EMA).register(Subtract);
 
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "tick",
       nodes: [
         {
@@ -125,7 +125,7 @@ describe("Graph JSON Serialization", () => {
       ],
     };
 
-    const g = Graph.fromJSON(descriptor, registry);
+    const g = GraphExec.fromJSON(descriptor, registry);
 
     g.update(100);
     g.update(200);
@@ -137,7 +137,7 @@ describe("Graph JSON Serialization", () => {
   it("should throw error for unknown type", () => {
     const registry = new OpRegistry();
 
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "tick",
       nodes: [
         {
@@ -150,7 +150,7 @@ describe("Graph JSON Serialization", () => {
     };
 
     expect(() => {
-      Graph.fromJSON(descriptor, registry);
+      GraphExec.fromJSON(descriptor, registry);
     }).toThrow(/Unknown type "UnknownIndicator" for node "ema"/);
   });
 
@@ -169,7 +169,7 @@ describe("Graph JSON Serialization", () => {
 
     const registry = new OpRegistry().register(Identity);
 
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "tick",
       nodes: [
         {
@@ -180,7 +180,7 @@ describe("Graph JSON Serialization", () => {
       ],
     };
 
-    const g = Graph.fromJSON(descriptor, registry);
+    const g = GraphExec.fromJSON(descriptor, registry);
     const out = g.update(42);
 
     expect(out.identity).toBe(42);
@@ -216,7 +216,7 @@ describe("Graph JSON Serialization", () => {
       .register(Multiply)
       .register(Subtract);
 
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "tick",
       nodes: [
         {
@@ -244,7 +244,7 @@ describe("Graph JSON Serialization", () => {
       ],
     };
 
-    const g = Graph.fromJSON(descriptor, registry);
+    const g = GraphExec.fromJSON(descriptor, registry);
 
     g.update(100);
     g.update(200);

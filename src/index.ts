@@ -422,26 +422,27 @@ export {
 // Note: ThreeWhiteSoldiers, ThreeBlackCrows, and ThreeBuddhaTop don't have use functions
 
 // ============================================================================
-// Flow - Graph & Registry
+// Flow - GraphExec & Registry
 // ============================================================================
 
-export { Graph } from "./flow/Graph.js";
+export { GraphExec } from "./flow/GraphExec.js";
 export { OpRegistry } from "./flow/Registry.js";
 export type {
-  NodeSchema,
-  GraphSchema,
-  GraphSchemaValidationResult,
-  GraphError,
-  GraphDiff,
-} from "./flow/Schema.js";
+  FlowNode,
+  FlowGraph,
+  FlowGraphValidationResult,
+  FlowGraphError,
+  FlowGraphDiff,
+} from "./flow/schema.js";
+export { FlowNodeSchema, FlowGraphSchema } from "./flow/schema.js";
 export {
-  NodeSchemaZod,
-  GraphSchemaZod,
-  validateGraphSchema,
-  formatValidationError,
-  graphComplexity,
-  graphDiff,
-} from "./flow/Schema.js";
+  calculateFlowGraphComplexity,
+  compareFlowGraphs,
+} from "./flow/schema-utils.js";
+export {
+  validateFlowGraph,
+  formatFlowValidationError,
+} from "./flow/validate.js";
 
 // ============================================================================
 // Namespace Exports

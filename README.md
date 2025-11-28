@@ -63,7 +63,7 @@ pnpm add @junduck/trading-indi
 | **Technical Indicators** | 80+ indicators across 8 categories | Calculate standard technical indicators incrementally |
 | **Pattern Recognition** | 10+ candlestick patterns | Detect chart patterns in realtime |
 | **Computation Primitives** | 40+ arithmetic & logical operators | Build custom calculations and trading logic |
-| **DAG Flow System** | Graph, OpRegistry, Schema validation | Compose complex multi-indicator strategies with automatic dependency resolution |
+| **DAG Flow System** | GraphExec, OpRegistry, Schema validation | Compose complex multi-indicator strategies with automatic dependency resolution |
 
 ### Architecture Overview
 
@@ -71,7 +71,7 @@ pnpm add @junduck/trading-indi
 ┌─────────────────────────────────────────────────────┐
 │                   Your Strategy                     │
 ├─────────────────────────────────────────────────────┤
-│  DAG Flow System (Graph + OpRegistry)               │
+│  DAG Flow System (GraphExec + OpRegistry)               │
 │  ├─ Topological execution                           │
 │  ├─ JSON serialization                              │
 │  └─ Forward reference resolution                    │
@@ -366,7 +366,7 @@ Build custom calculations using composable primitive operators. These are the bu
 
 ## DAG Flow System
 
-The **Graph** and **OpRegistry** provide a powerful DAG (Directed Acyclic Graph) execution engine for building complex, composable trading strategies. Define your computation as a graph of operators with dependencies, and the system handles topological sorting and execution.
+The **GraphExec** and **OpRegistry** provide a powerful DAG (Directed Acyclic GraphExec) execution engine for building complex, composable trading strategies. Define your computation as a graph of operators with dependencies, and the system handles topological sorting and execution.
 
 ### Key Features
 
@@ -380,13 +380,13 @@ The **Graph** and **OpRegistry** provide a powerful DAG (Directed Acyclic Graph)
 ### Example: Multi-Indicator Strategy with DAG
 
 ```typescript
-import { Graph, OpRegistry } from '@junduck/trading-indi';
+import { GraphExec, OpRegistry } from '@junduck/trading-indi';
 
 // Register all operators you want to use
 OpRegistry.registerDefaults();
 
 // Define your strategy as a graph
-const graph = new Graph('trading-strategy');
+const graph = new GraphExec('trading-strategy');
 
 // Input nodes
 graph.addNode('close', 'Input', []);
@@ -422,17 +422,17 @@ const schema = graph.exportSchema();
 console.log(JSON.stringify(schema, null, 2));
 
 // Load from JSON
-const restoredGraph = Graph.fromSchema(schema);
+const restoredGraph = GraphExec.fromSchema(schema);
 ```
 
 ### Example: Complex Strategy with Multiple Outputs
 
 ```typescript
-import { Graph, OpRegistry } from '@junduck/trading-indi';
+import { GraphExec, OpRegistry } from '@junduck/trading-indi';
 
 OpRegistry.registerDefaults();
 
-const graph = new Graph('advanced-strategy');
+const graph = new GraphExec('advanced-strategy');
 
 // Inputs
 graph.addNode('bar', 'Input', []);
@@ -604,7 +604,7 @@ import {
 
 // DAG Flow System
 import {
-  Graph, OpRegistry,
+  GraphExec, OpRegistry,
   validateGraphSchema, formatValidationError, graphComplexity, graphDiff
 } from '@junduck/trading-indi';
 
@@ -698,12 +698,12 @@ const results = historicalData.map(bar => ({
 ### 3. Custom Indicator with DAG
 
 ```typescript
-import { Graph, OpRegistry } from '@junduck/trading-indi';
+import { GraphExec, OpRegistry } from '@junduck/trading-indi';
 
 OpRegistry.registerDefaults();
 
 // Build a custom "Trend Strength" indicator
-const graph = new Graph('trend-strength');
+const graph = new GraphExec('trend-strength');
 
 graph.addNode('close', 'Input', []);
 graph.addNode('ema20', 'EMA', ['close'], { period: 20 });
@@ -754,7 +754,7 @@ for (let i = 0; i < assetPrices.length; i++) {
 | **Pattern Recognition** | 10+ | Doji, Hammer, Marubozu, Spinning Top, High Wave |
 | **Arithmetic Primitives** | 28 | Add, Sub, Mul, Div, Pow, Sqrt, Log, Clamp, Lerp, SumOf, AvgOf, etc. |
 | **Logical Primitives** | 23 | LT, GT, EQ, And, Or, Not, Between, IfThenElse, AllOf, AnyOf, etc. |
-| **Flow System** | 1 DAG engine | Graph, OpRegistry, Schema validation, JSON serialization |
+| **Flow System** | 1 DAG engine | GraphExec, OpRegistry, Schema validation, JSON serialization |
 
 ### Key Features
 

@@ -1,33 +1,27 @@
 import type { OpRegistry } from "./Registry.js";
-import type { GraphSchema } from "./Schema.js";
+import type { FlowGraph, FlowGraphValidationResult } from "./schema.js";
 import {
   normalizeUpdateSource,
-  validateGraphSchema,
-  formatValidationError,
-} from "./Schema.js";
-import type { TopoError } from "./validate.js";
-import { validateAdjList } from "./validate.js";
+  validateFlowGraph,
+  formatFlowValidationError,
+} from "./validate.js";
+import { validateAdjList } from "./validate-topo.js";
 import { OpAdapter, type DagNode, type Op } from "./utils.js";
 
 class NodeBuilder {
-  constructor(private graph: Graph, private name: string, private op: Op) {}
+  constructor(private graph: GraphExec, private name: string, private op: Op) {}
 
-  depends(...inputPaths: string[]): Graph {
+  depends(...inputPaths: string[]): GraphExec {
     const node = new OpAdapter(this.op, inputPaths);
     return this.graph.addNode(this.name, node);
   }
-}
-
-export interface GraphValidationResult {
-  valid: boolean;
-  errors: TopoError[];
 }
 
 /**
  * DAG-based computation graph.
  * Nodes execute synchronously in topological order.
  */
-export class Graph {
+export class GraphExec {
   private readonly rootNode: string;
   private readonly rootIndex = 0;
 
@@ -47,7 +41,7 @@ export class Graph {
   private size = 1; // Root takes index 0
 
   /**
-   * Create a new Graph with a root node.
+   * Create a new GraphExec with a root node.
    * @param rootNode Name of the root node that receives external data
    */
   constructor(rootNode: string) {
@@ -60,16 +54,16 @@ export class Graph {
   }
 
   /** Construct a graph from JSON descriptor. */
-  static fromJSON(schema: GraphSchema, registry: OpRegistry): Graph {
-    const validationResult = validateGraphSchema(schema, registry);
+  static fromJSON(schema: FlowGraph, registry: OpRegistry): GraphExec {
+    const validationResult = validateFlowGraph(schema, registry);
     if (!validationResult.valid) {
       const errorMessages = validationResult.errors
-        .map((err) => formatValidationError(err))
+        .map((err) => formatFlowValidationError(err))
         .join("; ");
       throw new Error(`Invalid graph schema: ${errorMessages}`);
     }
 
-    const graph = new Graph(schema.root);
+    const graph = new GraphExec(schema.root);
 
     for (const nodeDesc of schema.nodes) {
       const ctor = registry.get(nodeDesc.type)!;
@@ -160,7 +154,7 @@ export class Graph {
   }
 
   /** Validate that the graph is acyclic (DAG) and all nodes are reachable. */
-  validate(): GraphValidationResult {
+  validate(): FlowGraphValidationResult {
     // Convert index-based adjacency to string-based for validation
     const succMap = new Map<string, string[]>();
     for (let i = 0; i < this.successors.length; i++) {

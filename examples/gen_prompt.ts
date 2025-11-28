@@ -1,5 +1,5 @@
 import { OpRegistry } from "../src/flow/Registry.js";
-import { generateGraphSchemaPrompt } from "../src/agent/prompt.js";
+import { generateGraphSchemaPrompt } from "./agent/prompt.js";
 import { regCoreOps } from "../src/flow/RegistryUtils.js";
 
 // Create registry with some operators

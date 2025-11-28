@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { Graph, OpRegistry, type GraphSchema } from "../src/flow/index.js";
+import { GraphExec, OpRegistry, type FlowGraph } from "../src/flow/index.js";
 import { Const } from "../src/primitive/Const.js";
 import { Add, Mul } from "../src/primitive/arithmetic.js";
 
 describe("Const", () => {
   it("should return constant value without input", () => {
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
 
     g.add("const", new Const({ value: 42 })).depends();
 
@@ -17,7 +17,7 @@ describe("Const", () => {
   });
 
   it("should work with multiple const values", () => {
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
 
     g.add("const1", new Const({ value: 10 }))
       .depends()
@@ -35,7 +35,7 @@ describe("Const", () => {
       update: (a: number, b: number) => a + b,
     };
 
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
 
     g.add("const1", new Const({ value: 10 }))
       .depends()
@@ -52,7 +52,7 @@ describe("Const", () => {
   });
 
   it("should connect directly to root (be available when data comes)", () => {
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
 
     g.add("const", new Const({ value: 5 }))
       .depends()
@@ -71,7 +71,7 @@ describe("Const", () => {
   it("should work with JSON schema", () => {
     const registry = new OpRegistry().register(Const);
 
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "tick",
       nodes: [
         {
@@ -83,7 +83,7 @@ describe("Const", () => {
       ],
     };
 
-    const g = Graph.fromJSON(descriptor, registry);
+    const g = GraphExec.fromJSON(descriptor, registry);
     const out = g.update(42);
 
     expect(out.const).toBe(100);
@@ -95,7 +95,7 @@ describe("Const", () => {
       .register(Mul)
       .register(Add);
 
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "tick",
       nodes: [
         {
@@ -123,7 +123,7 @@ describe("Const", () => {
       ],
     };
 
-    const g = Graph.fromJSON(descriptor, registry);
+    const g = GraphExec.fromJSON(descriptor, registry);
 
     const out1 = g.update(5);
     const out2 = g.update(10);
@@ -137,7 +137,7 @@ describe("Const", () => {
   });
 
   it("should validate graph with const values correctly", () => {
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
 
     g.add("const1", new Const({ value: 10 }))
       .depends()
@@ -152,7 +152,7 @@ describe("Const", () => {
   });
 
   it("should handle const values with decimal precision", () => {
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
 
     g.add("pi", new Const({ value: 3.14159 })).depends();
 
@@ -162,7 +162,7 @@ describe("Const", () => {
   });
 
   it("should allow negative constant values", () => {
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
 
     g.add("negative", new Const({ value: -100 })).depends();
 
@@ -172,7 +172,7 @@ describe("Const", () => {
   });
 
   it("should allow zero as constant value", () => {
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
 
     g.add("zero", new Const({ value: 0 })).depends();
 
@@ -184,7 +184,7 @@ describe("Const", () => {
   it("should work with JSON schema when inputSrc is omitted", () => {
     const registry = new OpRegistry().register(Const);
 
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "tick",
       nodes: [
         {
@@ -195,7 +195,7 @@ describe("Const", () => {
       ],
     };
 
-    const g = Graph.fromJSON(descriptor, registry);
+    const g = GraphExec.fromJSON(descriptor, registry);
     const out = g.update(42);
 
     expect(out.const).toBe(100);
@@ -204,7 +204,7 @@ describe("Const", () => {
   it("should work with JSON schema when inputSrc is empty string", () => {
     const registry = new OpRegistry().register(Const);
 
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "tick",
       nodes: [
         {
@@ -216,7 +216,7 @@ describe("Const", () => {
       ],
     } as any;
 
-    const g = Graph.fromJSON(descriptor, registry);
+    const g = GraphExec.fromJSON(descriptor, registry);
     const out = g.update(42);
 
     expect(out.const).toBe(100);

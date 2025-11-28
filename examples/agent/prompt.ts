@@ -1,6 +1,6 @@
 import type { OpRegistry } from "../../src/flow/Registry.js";
-import type { GraphSchema, GraphError } from "../../src/flow/Schema.js";
-import { validateGraphSchema } from "../../src/flow/Schema.js";
+import type { FlowGraph, FlowGraphError } from "../../src/flow/schema.js";
+import { validateFlowGraph } from "../../src/flow/validate.js";
 
 /**
  * Agent feedback action types.
@@ -17,10 +17,10 @@ export enum AgentFeedbackAction {
  * Feedback for AI agent after processing GraphSchema.
  */
 export interface AgentFeedback {
-  schema?: GraphSchema;
+  schema?: FlowGraph;
   action: AgentFeedbackAction;
   parseError?: string;
-  validationErrors?: GraphError[];
+  validationErrors?: FlowGraphError[];
   evalMessage?: string;
   userInput?: string;
 }
@@ -150,7 +150,7 @@ export function parseGraphSchemaResponse(
   response: string,
   registry: OpRegistry
 ): AgentFeedback {
-  let schema: GraphSchema | undefined;
+  let schema: FlowGraph | undefined;
   let jsonText: string | undefined;
 
   try {
@@ -182,7 +182,7 @@ export function parseGraphSchemaResponse(
       };
     }
 
-    schema = JSON.parse(jsonText) as GraphSchema;
+    schema = JSON.parse(jsonText) as FlowGraph;
   } catch (error) {
     return {
       action: AgentFeedbackAction.FIX_JSON,
@@ -193,7 +193,7 @@ export function parseGraphSchemaResponse(
   }
 
   // Validate the parsed schema
-  const validation = validateGraphSchema(schema, registry);
+  const validation = validateFlowGraph(schema, registry);
   if (!validation.valid) {
     return {
       schema,

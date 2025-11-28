@@ -1,15 +1,16 @@
-export { Graph } from "./Graph.js";
+export { GraphExec } from "./GraphExec.js";
 export { OpRegistry } from "./Registry.js";
 export {
-  type NodeSchema,
-  type GraphSchema,
-  type GraphSchemaValidationResult,
-  type GraphError,
-  NodeSchemaZod,
-  GraphSchemaZod,
-  validateGraphSchema,
-  formatValidationError,
-  graphComplexity,
-  type GraphDiff,
-  graphDiff,
-} from "./Schema.js";
+  FlowNodeSchema,
+  type FlowNode,
+  FlowGraphSchema,
+  type FlowGraph,
+  type FlowGraphValidationResult,
+  type FlowGraphError,
+  type FlowGraphDiff,
+} from "./schema.js";
+export { validateFlowGraph, formatFlowValidationError } from "./validate.js";
+export {
+  calculateFlowGraphComplexity,
+  compareFlowGraphs,
+} from "./schema-utils.js";

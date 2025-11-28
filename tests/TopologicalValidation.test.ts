@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   OpRegistry,
-  type GraphSchema,
-  validateGraphSchema,
-  formatValidationError,
+  type FlowGraph,
+  validateFlowGraph,
+  formatFlowValidationError,
 } from "../src/flow/index.js";
 
 class Op {
@@ -19,7 +19,7 @@ describe("Topological Validation", () => {
 
   describe("Cycle Detection", () => {
     it("should detect simple cycle with detailed path", () => {
-      const schema: GraphSchema = {
+      const schema: FlowGraph = {
         root: "tick",
         nodes: [
           { name: "a", type: "Op", inputSrc: ["b"] },
@@ -28,7 +28,7 @@ describe("Topological Validation", () => {
         ],
       };
 
-      const result = validateGraphSchema(schema, registry);
+      const result = validateFlowGraph(schema, registry);
 
       expect(result.valid).toBe(false);
       expect(result.errors.length).toBeGreaterThanOrEqual(1);
@@ -46,19 +46,19 @@ describe("Topological Validation", () => {
         expect(cyclePath.length).toBeGreaterThan(2);
 
         // Should form a cycle (first and last are connected)
-        const formatted = formatValidationError(cycleError);
+        const formatted = formatFlowValidationError(cycleError);
         expect(formatted).toContain("→");
         expect(formatted).toContain("cycle");
       }
     });
 
     it("should detect self-loop", () => {
-      const schema: GraphSchema = {
+      const schema: FlowGraph = {
         root: "tick",
         nodes: [{ name: "a", type: "Op", inputSrc: ["a"] }],
       };
 
-      const result = validateGraphSchema(schema, registry);
+      const result = validateFlowGraph(schema, registry);
 
       expect(result.valid).toBe(false);
       expect(result.errors.length).toBeGreaterThanOrEqual(1);
@@ -73,7 +73,7 @@ describe("Topological Validation", () => {
     });
 
     it("should detect cycle involving root node", () => {
-      const schema: GraphSchema = {
+      const schema: FlowGraph = {
         root: "a",
         nodes: [
           { name: "a", type: "Op", inputSrc: ["b"] },
@@ -81,7 +81,7 @@ describe("Topological Validation", () => {
         ],
       };
 
-      const result = validateGraphSchema(schema, registry);
+      const result = validateFlowGraph(schema, registry);
 
       expect(result.valid).toBe(false);
       expect(result.errors[0]?.type).toBe("cycle");
@@ -90,7 +90,7 @@ describe("Topological Validation", () => {
 
   describe("Unreachable Node Detection", () => {
     it("should detect unreachable nodes in disconnected graph", () => {
-      const schema: GraphSchema = {
+      const schema: FlowGraph = {
         root: "tick",
         nodes: [
           { name: "a", type: "Op", inputSrc: ["tick"] },
@@ -99,7 +99,7 @@ describe("Topological Validation", () => {
         ],
       };
 
-      const result = validateGraphSchema(schema, registry);
+      const result = validateFlowGraph(schema, registry);
 
       expect(result.valid).toBe(false);
       // Should report unknown dependency first (prevents topology check)
@@ -107,7 +107,7 @@ describe("Topological Validation", () => {
     });
 
     it("should report unreachable nodes when dependencies form separate component", () => {
-      const schema: GraphSchema = {
+      const schema: FlowGraph = {
         root: "tick",
         nodes: [
           { name: "a", type: "Op", inputSrc: ["tick"] },
@@ -119,7 +119,7 @@ describe("Topological Validation", () => {
         ],
       };
 
-      const result = validateGraphSchema(schema, registry);
+      const result = validateFlowGraph(schema, registry);
 
       expect(result.valid).toBe(false);
       // Cycle in x-y-z prevents them from being processed
@@ -129,7 +129,7 @@ describe("Topological Validation", () => {
 
   describe("Structured Error Format for LLM", () => {
     it("should provide actionable error format", () => {
-      const schema: GraphSchema = {
+      const schema: FlowGraph = {
         root: "tick",
         nodes: [
           { name: "a", type: "Op", inputSrc: ["b"] },
@@ -137,7 +137,7 @@ describe("Topological Validation", () => {
         ],
       };
 
-      const result = validateGraphSchema(schema, registry);
+      const result = validateFlowGraph(schema, registry);
 
       expect(result.valid).toBe(false);
 
@@ -146,7 +146,7 @@ describe("Topological Validation", () => {
       expect(error).toHaveProperty("type");
 
       // Should format nicely for LLM feedback
-      const formatted = formatValidationError(error!);
+      const formatted = formatFlowValidationError(error!);
       expect(formatted).toBeTruthy();
       expect(typeof formatted).toBe("string");
     });
@@ -167,9 +167,7 @@ describe("Topological Validation", () => {
         },
       ];
 
-      const results = schemas.map((s) =>
-        validateGraphSchema(s as any, registry)
-      );
+      const results = schemas.map((s) => validateFlowGraph(s as any, registry));
 
       expect(results[0]!.errors[0]?.type).toBe("structure");
       expect(results[1]!.errors[0]?.type).toBe("unknown_type");
@@ -177,7 +175,7 @@ describe("Topological Validation", () => {
 
       // Each should have different formatted messages
       const formatted = results.map((r) =>
-        r.errors[0] ? formatValidationError(r.errors[0]) : ""
+        r.errors[0] ? formatFlowValidationError(r.errors[0]) : ""
       );
       expect(formatted[0]).not.toBe(formatted[1]);
       expect(formatted[1]).not.toBe(formatted[2]);
@@ -186,7 +184,7 @@ describe("Topological Validation", () => {
 
   describe("Complex Scenarios", () => {
     it("should validate complex valid DAG", () => {
-      const schema: GraphSchema = {
+      const schema: FlowGraph = {
         root: "tick",
         nodes: [
           { name: "a", type: "Op", inputSrc: ["tick"] },
@@ -197,14 +195,14 @@ describe("Topological Validation", () => {
         ],
       };
 
-      const result = validateGraphSchema(schema, registry);
+      const result = validateFlowGraph(schema, registry);
 
       expect(result.valid).toBe(true);
       expect(result.errors).toHaveLength(0);
     });
 
     it("should detect cycle in complex graph", () => {
-      const schema: GraphSchema = {
+      const schema: FlowGraph = {
         root: "tick",
         nodes: [
           { name: "a", type: "Op", inputSrc: ["tick"] },
@@ -221,7 +219,7 @@ describe("Topological Validation", () => {
       // Add actual cycle
       schema.nodes[1]!.inputSrc = ["f"]; // b depends on f, creating cycle
 
-      const result = validateGraphSchema(schema, registry);
+      const result = validateFlowGraph(schema, registry);
 
       expect(result.valid).toBe(false);
       expect(result.errors[0]?.type).toBe("cycle");

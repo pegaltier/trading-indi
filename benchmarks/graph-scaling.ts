@@ -1,9 +1,9 @@
 /**
- * Graph Scaling Benchmark
+ * GraphExec Scaling Benchmark
  * Tests performance with different graph sizes
  */
 
-import { Graph } from "../src/flow/index.js";
+import { GraphExec } from "../src/flow/index.js";
 import { EMA } from "@junduck/trading-core";
 
 class Add {
@@ -13,8 +13,8 @@ class Add {
   }
 }
 
-function buildGraph(nodeCount: number): Graph {
-  const graph = new Graph("tick");
+function buildGraph(nodeCount: number): GraphExec {
+  const graph = new GraphExec("tick");
 
   // Build linear chain of nodes
   for (let i = 0; i < nodeCount; i++) {
@@ -54,7 +54,7 @@ function benchmarkSize(nodeCount: number, iterations: number) {
 }
 
 function runScalingBenchmark() {
-  console.log("Graph Scaling Benchmark");
+  console.log("GraphExec Scaling Benchmark");
   console.log("=".repeat(70));
   console.log();
 

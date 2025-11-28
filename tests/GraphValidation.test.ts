@@ -1,42 +1,54 @@
 import { describe, expect, it } from "vitest";
 import {
   OpRegistry,
-  type GraphSchema,
-  validateGraphSchema,
-  graphComplexity,
-  Graph,
+  type FlowGraph,
+  validateFlowGraph,
+  calculateFlowGraphComplexity,
+  GraphExec,
 } from "../src/flow/index.js";
 import type { OperatorDoc } from "../src/types/OpDoc.js";
 
 class EMA {
   static readonly doc: OperatorDoc = {
     type: "EMA",
-    update: "x: number",
+    input: "x: number",
     output: "number",
   };
+
+  update(x: number): number {
+    return x;
+  }
 }
 
 class SMA {
   static readonly doc: OperatorDoc = {
     type: "SMA",
-    update: "x: number",
+    input: "x: number",
     output: "number",
   };
+
+  update(x: number): number {
+    return x;
+  }
 }
 
 class Op {
   static readonly doc: OperatorDoc = {
     type: "Op",
-    update: "...args: any[]",
+    input: "...args: any[]",
     output: "any",
   };
+
+  update(...args: any[]): any {
+    return args;
+  }
 }
 
-describe("Graph Validation", () => {
+describe("GraphExec Validation", () => {
   it("should validate a valid graph", () => {
     const registry = new OpRegistry().register(EMA).register(SMA);
 
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "tick",
       nodes: [
         { name: "fast", type: "EMA", inputSrc: ["tick"] },
@@ -44,7 +56,7 @@ describe("Graph Validation", () => {
       ],
     };
 
-    const result = validateGraphSchema(descriptor, registry);
+    const result = validateFlowGraph(descriptor, registry);
     expect(result.valid).toBe(true);
     expect(result.errors).toHaveLength(0);
   });
@@ -52,12 +64,12 @@ describe("Graph Validation", () => {
   it("should detect unknown type", () => {
     const registry = new OpRegistry().register(EMA);
 
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "tick",
       nodes: [{ name: "ema", type: "Unknown", inputSrc: ["tick"] }],
     };
 
-    const result = validateGraphSchema(descriptor, registry);
+    const result = validateFlowGraph(descriptor, registry);
     expect(result.valid).toBe(false);
     expect(result.errors).toHaveLength(1);
     expect(result.errors[0]).toEqual({
@@ -70,12 +82,12 @@ describe("Graph Validation", () => {
   it("should detect missing dependency", () => {
     const registry = new OpRegistry().register(EMA);
 
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "tick",
       nodes: [{ name: "ema", type: "EMA", inputSrc: ["missing"] }],
     };
 
-    const result = validateGraphSchema(descriptor, registry);
+    const result = validateFlowGraph(descriptor, registry);
     expect(result.valid).toBe(false);
     expect(result.errors).toHaveLength(1);
     // Missing dependencies are detected as unreachable nodes
@@ -88,24 +100,24 @@ describe("Graph Validation", () => {
   it("should handle path dependencies", () => {
     const registry = new OpRegistry().register(EMA);
 
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "tick",
       nodes: [{ name: "ema", type: "EMA", inputSrc: ["tick.price"] }],
     };
 
-    const result = validateGraphSchema(descriptor, registry);
+    const result = validateFlowGraph(descriptor, registry);
     expect(result.valid).toBe(true);
   });
 
   it("should detect missing dependency when root is different", () => {
     const registry = new OpRegistry().register(EMA);
 
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "price",
       nodes: [{ name: "ema", type: "EMA", inputSrc: ["tick"] }],
     };
 
-    const result = validateGraphSchema(descriptor, registry);
+    const result = validateFlowGraph(descriptor, registry);
     expect(result.valid).toBe(false);
     expect(result.errors).toHaveLength(1);
     // Missing dependencies are detected as unreachable nodes
@@ -118,7 +130,7 @@ describe("Graph Validation", () => {
   it("should detect cycle", () => {
     const registry = new OpRegistry().register(Op);
 
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "a",
       nodes: [
         { name: "a", type: "Op", inputSrc: ["c"] },
@@ -127,7 +139,7 @@ describe("Graph Validation", () => {
       ],
     };
 
-    const result = validateGraphSchema(descriptor, registry);
+    const result = validateFlowGraph(descriptor, registry);
     expect(result.valid).toBe(false);
     expect(result.errors).toHaveLength(1);
     expect(result.errors[0]?.type).toBe("cycle");
@@ -140,7 +152,7 @@ describe("Graph Validation", () => {
   it("should allow valid DAG", () => {
     const registry = new OpRegistry().register(Op);
 
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "tick",
       nodes: [
         { name: "a", type: "Op", inputSrc: ["tick"] },
@@ -149,14 +161,14 @@ describe("Graph Validation", () => {
       ],
     };
 
-    const result = validateGraphSchema(descriptor, registry);
+    const result = validateFlowGraph(descriptor, registry);
     expect(result.valid).toBe(true);
   });
 
   it("should validate when inputSrc is omitted (for Const nodes)", () => {
     const registry = new OpRegistry().register(Op);
 
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "tick",
       nodes: [
         { name: "const", type: "Op" },
@@ -164,14 +176,14 @@ describe("Graph Validation", () => {
       ],
     };
 
-    const result = validateGraphSchema(descriptor, registry);
+    const result = validateFlowGraph(descriptor, registry);
     expect(result.valid).toBe(true);
   });
 
   it("should validate when inputSrc is empty string (for Const nodes)", () => {
     const registry = new OpRegistry().register(Op);
 
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "tick",
       nodes: [
         { name: "const", type: "Op", inputSrc: "" },
@@ -179,23 +191,25 @@ describe("Graph Validation", () => {
       ],
     } as any;
 
-    const result = validateGraphSchema(descriptor, registry);
+    const result = validateFlowGraph(descriptor, registry);
     expect(result.valid).toBe(true);
   });
 });
 
-describe("Graph Complexity", () => {
+describe("GraphExec Complexity", () => {
   it("should calculate complexity for simple graph", () => {
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "tick",
       nodes: [{ name: "ema", type: "EMA", inputSrc: ["tick"] }],
     };
 
-    expect(graphComplexity(descriptor)).toBe(2); // 1 node + 1 edge
+    const complexity = calculateFlowGraphComplexity(descriptor);
+    expect(complexity.nodeCount).toBe(1);
+    expect(complexity.edgeCount).toBe(1);
   });
 
   it("should calculate complexity for complex graph", () => {
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "tick",
       nodes: [
         { name: "a", type: "Op", inputSrc: ["tick"] },
@@ -204,11 +218,13 @@ describe("Graph Complexity", () => {
       ],
     };
 
-    expect(graphComplexity(descriptor)).toBe(7); // 3 nodes + 4 edges
+    const complexity = calculateFlowGraphComplexity(descriptor);
+    expect(complexity.nodeCount).toBe(3);
+    expect(complexity.edgeCount).toBe(4);
   });
 
   it("should return node count for graph with no edges", () => {
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "tick",
       nodes: [
         { name: "a", type: "Op", inputSrc: [] },
@@ -216,11 +232,13 @@ describe("Graph Complexity", () => {
       ],
     };
 
-    expect(graphComplexity(descriptor)).toBe(2); // 2 nodes + 0 edges
+    const complexity = calculateFlowGraphComplexity(descriptor);
+    expect(complexity.nodeCount).toBe(2);
+    expect(complexity.edgeCount).toBe(0);
   });
 
   it("should handle omitted inputSrc (for Const nodes)", () => {
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "tick",
       nodes: [
         { name: "const", type: "Op" },
@@ -228,11 +246,13 @@ describe("Graph Complexity", () => {
       ],
     };
 
-    expect(graphComplexity(descriptor)).toBe(3); // 2 nodes + 1 edge
+    const complexity = calculateFlowGraphComplexity(descriptor);
+    expect(complexity.nodeCount).toBe(2);
+    expect(complexity.edgeCount).toBe(1);
   });
 
   it("should handle empty string inputSrc (for Const nodes)", () => {
-    const descriptor: GraphSchema = {
+    const descriptor: FlowGraph = {
       root: "tick",
       nodes: [
         { name: "const", type: "Op", inputSrc: "" },
@@ -240,16 +260,18 @@ describe("Graph Complexity", () => {
       ],
     } as any;
 
-    expect(graphComplexity(descriptor)).toBe(3); // 2 nodes + 1 edge
+    const complexity = calculateFlowGraphComplexity(descriptor);
+    expect(complexity.nodeCount).toBe(2);
+    expect(complexity.edgeCount).toBe(1);
   });
 });
 
-describe("Graph.validate() - runtime validation", () => {
+describe("GraphExec.validate() - runtime validation", () => {
   it("should detect non-existent dependency when built imperatively", () => {
     const registry = new OpRegistry().register(EMA);
     const ema = new EMA();
 
-    const graph = new Graph("tick");
+    const graph = new GraphExec("tick");
     const node = {
       __isDagNode: true as const,
       inputPath: ["nonExistent"],
@@ -271,7 +293,7 @@ describe("Graph.validate() - runtime validation", () => {
   });
 
   it("should pass validation when all dependencies exist", () => {
-    const graph = new Graph("tick");
+    const graph = new GraphExec("tick");
     const node1 = {
       __isDagNode: true as const,
       inputPath: ["tick"],
@@ -292,11 +314,11 @@ describe("Graph.validate() - runtime validation", () => {
   });
 
   it("should detect multiple non-existent dependencies", () => {
-    const graph = new Graph("tick");
+    const graph = new GraphExec("tick");
     const node1 = {
       __isDagNode: true as const,
       inputPath: ["missing1", "missing2"],
-      update: (state: Record<string, any>) => null,
+      predSatisfied: (state: Record<string, any>) => null,
     };
 
     graph.addNode("node1", node1);
@@ -314,11 +336,11 @@ describe("Graph.validate() - runtime validation", () => {
   });
 
   it("should handle path-based dependencies correctly", () => {
-    const graph = new Graph("tick");
+    const graph = new GraphExec("tick");
     const node = {
       __isDagNode: true as const,
       inputPath: ["tick.price"],
-      update: (state: Record<string, any>) => state.tick?.price,
+      predSatisfied: (state: Record<string, any>) => state.tick?.price,
     };
 
     graph.addNode("node1", node);

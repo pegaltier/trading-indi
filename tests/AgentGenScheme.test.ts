@@ -4,38 +4,39 @@ import { join } from "node:path";
 import { regCoreOps } from "../src/flow/RegistryUtils.js";
 
 import {
-  Graph,
+  GraphExec,
   OpRegistry,
-  type GraphSchema,
-  validateGraphSchema,
-  graphComplexity,
+  type FlowGraph,
+  validateFlowGraph,
+  calculateFlowGraphComplexity,
 } from "../src/flow/index.js";
 
 describe("Agent Generated Schema", () => {
   it("should load and validate AgentGenScheme.json", () => {
     const schemaPath = join(__dirname, "AgentGenScheme.json");
     const schemaJson = readFileSync(schemaPath, "utf-8");
-    const schema: GraphSchema = JSON.parse(schemaJson);
+    const schema: FlowGraph = JSON.parse(schemaJson);
 
     const registry = new OpRegistry();
     regCoreOps(registry);
 
-    const result = validateGraphSchema(schema, registry);
+    const result = validateFlowGraph(schema, registry);
     expect(result.valid).toBe(true);
     expect(result.errors).toHaveLength(0);
 
-    expect(graphComplexity(schema)).greaterThan(0);
+    const complexity = calculateFlowGraphComplexity(schema);
+    expect(complexity.nodeCount).greaterThan(0);
   });
 
   it("should build graph from AgentGenScheme.json without errors", () => {
     const schemaPath = join(__dirname, "AgentGenScheme.json");
     const schemaJson = readFileSync(schemaPath, "utf-8");
-    const schema: GraphSchema = JSON.parse(schemaJson);
+    const schema: FlowGraph = JSON.parse(schemaJson);
 
     const registry = new OpRegistry();
     regCoreOps(registry);
 
-    const graph = Graph.fromJSON(schema, registry);
+    const graph = GraphExec.fromJSON(schema, registry);
 
     // Execute the graph
     const output = graph.update({
@@ -67,12 +68,12 @@ describe("Agent Generated Schema", () => {
   it("should validate graph structure is acyclic", () => {
     const schemaPath = join(__dirname, "AgentGenScheme.json");
     const schemaJson = readFileSync(schemaPath, "utf-8");
-    const schema: GraphSchema = JSON.parse(schemaJson);
+    const schema: FlowGraph = JSON.parse(schemaJson);
 
     const registry = new OpRegistry();
     regCoreOps(registry);
 
-    const graph = Graph.fromJSON(schema, registry);
+    const graph = GraphExec.fromJSON(schema, registry);
     const validationResult = graph.validate();
 
     expect(validationResult.valid).toBe(true);

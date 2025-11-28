@@ -1,16 +1,15 @@
 import type { OpRegistry } from "../../src/flow/Registry.js";
-import type { GraphSchema } from "../../src/flow/Schema.js";
+import type { FlowGraph, FlowGraphDiff } from "../../src/flow/schema.js";
+import { compareFlowGraphs } from "../../src/flow/schema-utils.js";
 import {
-  validateGraphSchema,
-  formatValidationError,
-  graphDiff,
-  type GraphDiff,
-} from "../../src/flow/Schema.js";
-import { Graph } from "../../src/flow/Graph.js";
+  validateFlowGraph,
+  formatFlowValidationError,
+} from "../../src/flow/validate.js";
+import { GraphExec } from "../../src/flow/GraphExec.js";
 
 /**
  * Feedback loop using whole graph replacement.
- * Agent generates complete GraphSchema, not fine-grained actions.
+ * Agent generates complete FlowGraph, not fine-grained actions.
  */
 
 /**
@@ -40,8 +39,8 @@ export interface StructuralIssue {
  */
 export interface FeedbackIteration {
   reason: FeedbackReason;
-  schema: GraphSchema;
-  diff?: GraphDiffSummary; // Computed from previous iteration
+  schema: FlowGraph;
+  diff?: FlowGraphDiffSummary; // Computed from previous iteration
   evalResult?: EvaluationResult;
   timestamp: number;
 }
@@ -49,8 +48,8 @@ export interface FeedbackIteration {
 /**
  * Enhanced diff summary with impact analysis.
  */
-export interface GraphDiffSummary {
-  changes: GraphDiff[];
+export interface FlowGraphDiffSummary {
+  changes: FlowGraphDiff[];
   summary: string; // Human/agent-readable summary
   impactAnalysis: ImpactAnalysis;
   structuralChanges: StructuralChange[];
@@ -105,8 +104,8 @@ export interface EvaluationResult {
  * Feedback loop state.
  */
 export interface FeedbackLoopState {
-  initialSchema: GraphSchema; // Schema at initialization (for undo to beginning)
-  currentSchema: GraphSchema;
+  initialSchema: FlowGraph; // Schema at initialization (for undo to beginning)
+  currentSchema: FlowGraph;
   history: FeedbackIteration[];
   registry: OpRegistry;
 }
@@ -115,7 +114,7 @@ export interface FeedbackLoopState {
  * Initialize feedback loop with initial schema.
  */
 export function initFeedbackLoop(
-  initialSchema: GraphSchema,
+  initialSchema: FlowGraph,
   registry: OpRegistry
 ): FeedbackLoopState {
   return {
@@ -133,18 +132,18 @@ export function initFeedbackLoop(
 export function applyFeedback(
   state: FeedbackLoopState,
   reason: FeedbackReason,
-  newSchema: GraphSchema
+  newSchema: FlowGraph
 ): {
   success: boolean;
   state?: FeedbackLoopState;
   errors?: string[];
 } {
   // Validate new schema
-  const validation = validateGraphSchema(newSchema, state.registry);
+  const validation = validateFlowGraph(newSchema, state.registry);
   if (!validation.valid) {
     return {
       success: false,
-      errors: validation.errors.map(formatValidationError),
+      errors: validation.errors.map(formatFlowValidationError),
     };
   }
 
@@ -180,7 +179,7 @@ export async function evaluateSchema(
   state: FeedbackLoopState;
   result: EvaluationResult;
 }> {
-  const graph = Graph.fromJSON(state.currentSchema, state.registry);
+  const graph = GraphExec.fromJSON(state.currentSchema, state.registry);
   const testCases: TestCaseResult[] = [];
   let passCount = 0;
 
@@ -239,10 +238,10 @@ export async function evaluateSchema(
  * Compute enhanced diff with impact analysis.
  */
 export function computeEnhancedDiff(
-  before: GraphSchema,
-  after: GraphSchema
-): GraphDiffSummary {
-  const changes = graphDiff(before, after);
+  before: FlowGraph,
+  after: FlowGraph
+): FlowGraphDiffSummary {
+  const changes = compareFlowGraphs(before, after);
 
   // Analyze impact
   const nodesAdded = changes.filter((c) => c.kind === "node_added").length;
@@ -304,9 +303,9 @@ export function computeEnhancedDiff(
  * Detect high-level structural changes.
  */
 function detectStructuralChanges(
-  changes: GraphDiff[],
-  before: GraphSchema,
-  after: GraphSchema
+  changes: FlowGraphDiff[],
+  before: FlowGraph,
+  after: FlowGraph
 ): StructuralChange[] {
   const structural: StructuralChange[] = [];
 
@@ -343,13 +342,13 @@ function detectStructuralChanges(
   if (complexityAfter > complexityBefore * 1.2) {
     structural.push({
       type: "complexity_increased",
-      description: `Graph complexity increased: ${complexityBefore} → ${complexityAfter} nodes`,
+      description: `GraphExec complexity increased: ${complexityBefore} → ${complexityAfter} nodes`,
       nodes: [],
     });
   } else if (complexityAfter < complexityBefore * 0.8) {
     structural.push({
       type: "complexity_decreased",
-      description: `Graph complexity decreased: ${complexityBefore} → ${complexityAfter} nodes`,
+      description: `GraphExec complexity decreased: ${complexityBefore} → ${complexityAfter} nodes`,
       nodes: [],
     });
   }
@@ -361,7 +360,7 @@ function detectStructuralChanges(
  * Generate human/agent-readable diff summary.
  */
 function generateDiffSummary(
-  _changes: GraphDiff[],
+  _changes: FlowGraphDiff[],
   impact: ImpactAnalysis
 ): string {
   const parts: string[] = [];
@@ -418,7 +417,7 @@ export function generateFeedbackPrompt(
     prompt += `- Metrics: ${JSON.stringify(evalResult.metrics, null, 2)}\n`;
   }
 
-  prompt += "\nCurrent Graph:\n";
+  prompt += "\nCurrent GraphExec:\n";
   prompt += JSON.stringify(state.currentSchema, null, 2) + "\n\n";
 
   if (failedTests.length > 0) {
@@ -446,7 +445,7 @@ export function generateFeedbackPrompt(
     }
   }
 
-  prompt += "\nPlease provide an updated GraphSchema to fix these issues.\n";
+  prompt += "\nPlease provide an updated FlowGraph to fix these issues.\n";
 
   return prompt;
 }
@@ -534,7 +533,7 @@ export function getLoopStatistics(state: FeedbackLoopState): {
  * Analyze graph for structural issues.
  */
 export function analyzeGraphStructure(
-  schema: GraphSchema,
+  schema: FlowGraph,
   _registry: OpRegistry
 ): StructuralIssue[] {
   const issues: StructuralIssue[] = [];
@@ -544,7 +543,7 @@ export function analyzeGraphStructure(
     issues.push({
       severity: "warning",
       category: "complexity",
-      description: `Graph has ${schema.nodes.length} nodes, consider simplification`,
+      description: `GraphExec has ${schema.nodes.length} nodes, consider simplification`,
     });
   }
 

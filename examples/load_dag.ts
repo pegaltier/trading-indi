@@ -2,12 +2,12 @@ import { readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { OpRegistry } from "../src/flow/Registry.js";
-import { Graph } from "../src/flow/Graph.js";
+import { GraphExec } from "../src/flow/GraphExec.js";
 import {
-  validateGraphSchema,
-  GraphSchemaZod,
-  formatValidationError,
-} from "../src/flow/Schema.js";
+  validateFlowGraph,
+  formatFlowValidationError,
+} from "../src/flow/validate.js";
+import { FlowGraphSchema } from "../src/flow/schema.js";
 import { regCoreOps } from "../src/flow/RegistryUtils.js";
 
 // Load JSON file
@@ -18,7 +18,7 @@ const jsonContent = readFileSync(jsonPath, "utf-8");
 
 // Parse and validate JSON structure with Zod
 console.log("Parsing and validating JSON structure...");
-const parseResult = GraphSchemaZod.safeParse(JSON.parse(jsonContent));
+const parseResult = FlowGraphSchema.safeParse(JSON.parse(jsonContent));
 
 if (!parseResult.success) {
   console.error("❌ Schema structure validation failed:");
@@ -43,12 +43,12 @@ const registry = new OpRegistry();
 regCoreOps(registry);
 
 console.log("Validating business logic (registry, cycles, dependencies)...");
-const schemaValidation = validateGraphSchema(graphSchema, registry);
+const schemaValidation = validateFlowGraph(graphSchema, registry);
 
 if (!schemaValidation.valid) {
   console.error("❌ Business logic validation failed:");
   for (const error of schemaValidation.errors) {
-    console.error(`  - ${formatValidationError(error)}`);
+    console.error(`  - ${formatFlowValidationError(error)}`);
   }
   process.exit(1);
 }
@@ -58,14 +58,14 @@ console.log();
 
 // Construct graph from schema
 console.log("Building graph from schema...");
-const graph = Graph.fromJSON(graphSchema, registry);
+const graph = GraphExec.fromJSON(graphSchema, registry);
 
 // Validate graph structure
 console.log("Validating graph structure...");
 const graphValidation = graph.validate();
 
 if (!graphValidation.valid) {
-  console.error("Graph validation failed:");
+  console.error("GraphExec validation failed:");
   for (const error of graphValidation.errors) {
     if (error.type === "cycle") {
       console.error(`  - Cycle detected: ${error.nodes.join(" -> ")}`);
@@ -76,7 +76,7 @@ if (!graphValidation.valid) {
   process.exit(1);
 }
 
-console.log("✓ Graph validation passed");
+console.log("✓ GraphExec validation passed");
 console.log();
 
 // Example usage: run the graph with sample data
@@ -94,4 +94,4 @@ const sampleTick = {
 const output = graph.update(sampleTick);
 
 console.log();
-console.log("✓ Graph execution completed successfully");
+console.log("✓ GraphExec execution completed successfully");

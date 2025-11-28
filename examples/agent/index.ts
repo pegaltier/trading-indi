@@ -17,7 +17,7 @@ export type {
   FeedbackReason,
   EvaluationResult,
   TestCaseResult,
-  GraphDiffSummary,
+  FlowGraphDiffSummary,
   ImpactAnalysis,
   StructuralChange,
   StructuralIssue,

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { Graph } from "../src/flow/Graph.js";
+import { GraphExec } from "../src/flow/GraphExec.js";
 import { SMA } from "../src/primitive/core-ops/rolling.js";
 
 describe("Partial Update Handling", () => {
   it("should handle nodes that only emit on the 3rd update", () => {
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
 
     class ThirdUpdateNode {
       private count = 0;
@@ -48,7 +48,7 @@ describe("Partial Update Handling", () => {
   });
 
   it("should handle SMA with period 3 that only produces output after enough data", () => {
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
 
     g.add("sma", new SMA({ period: 3 }))
       .depends("tick")
@@ -82,7 +82,7 @@ describe("Partial Update Handling", () => {
   });
 
   it("should handle complex graph with mixed nodes that produce output at different times", () => {
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
 
     const alwaysNode = {
       update: (value: number) => value + 1,

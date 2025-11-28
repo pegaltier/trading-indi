@@ -1,5 +1,5 @@
 import { bench, describe } from "vitest";
-import { Graph } from "../src/flow/Graph.js";
+import { GraphExec } from "../src/flow/GraphExec.js";
 import { EMA, SMA } from "@junduck/trading-core";
 
 // Trivial computation nodes
@@ -23,11 +23,11 @@ class Subtract {
   }
 }
 
-// Graph builders for different topologies
+// GraphExec builders for different topologies
 
 /** Linear chain: tick -> n1 -> n2 -> ... -> nN */
-function buildLinearGraph(nodeCount: number): Graph {
-  const graph = new Graph("tick");
+function buildLinearGraph(nodeCount: number): GraphExec {
+  const graph = new GraphExec("tick");
   let prevNode = "tick";
 
   for (let i = 0; i < nodeCount; i++) {
@@ -40,8 +40,8 @@ function buildLinearGraph(nodeCount: number): Graph {
 }
 
 /** Wide graph: all nodes depend directly on root */
-function buildWideGraph(nodeCount: number): Graph {
-  const graph = new Graph("tick");
+function buildWideGraph(nodeCount: number): GraphExec {
+  const graph = new GraphExec("tick");
 
   for (let i = 0; i < nodeCount; i++) {
     graph.add(`node_${i}`, new Add(i)).depends("tick");
@@ -51,8 +51,8 @@ function buildWideGraph(nodeCount: number): Graph {
 }
 
 /** Diamond pattern: creates many diamond-shaped dependency structures */
-function buildDiamondGraph(nodeCount: number): Graph {
-  const graph = new Graph("tick");
+function buildDiamondGraph(nodeCount: number): GraphExec {
+  const graph = new GraphExec("tick");
 
   // Create diamonds in batches of 4 nodes
   const diamonds = Math.floor(nodeCount / 4);
@@ -93,8 +93,8 @@ function buildDiamondGraph(nodeCount: number): Graph {
 }
 
 /** Complex realistic graph: multiple layers with indicators */
-function buildRealisticGraph(nodeCount: number): Graph {
-  const graph = new Graph("tick");
+function buildRealisticGraph(nodeCount: number): GraphExec {
+  const graph = new GraphExec("tick");
   let nodesAdded = 0;
 
   // Layer 1: Fast EMAs (1/4 of nodes)
@@ -140,7 +140,7 @@ function createSampleData(): number[] {
 }
 
 // Construction benchmarks
-describe("Graph Construction", () => {
+describe("GraphExec Construction", () => {
   bench("build linear graph (10 nodes)", () => {
     buildLinearGraph(10);
   });
@@ -191,7 +191,7 @@ describe("Graph Construction", () => {
 });
 
 // Execution benchmarks - single update
-describe("Graph Execution - Single Update", () => {
+describe("GraphExec Execution - Single Update", () => {
   const graphs = {
     linear10: buildLinearGraph(10),
     linear50: buildLinearGraph(50),
@@ -264,7 +264,7 @@ describe("Graph Execution - Single Update", () => {
 });
 
 // Throughput benchmarks - batch updates
-describe("Graph Throughput - Batch Updates", () => {
+describe("GraphExec Throughput - Batch Updates", () => {
   const data = createSampleData();
 
   bench("linear 50 nodes x 1000 updates", () => {

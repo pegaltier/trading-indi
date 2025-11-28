@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { Graph } from "../src/flow/Graph.js";
+import { GraphExec } from "../src/flow/GraphExec.js";
 import { EMA } from "../src/primitive/core-ops/rolling.js";
 
-describe("Graph", () => {
+describe("GraphExec", () => {
   it("should handle simple tick data flow with .depends()", () => {
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
 
     g.add("ema", new EMA({ period: 2 })).depends("tick");
 
@@ -18,7 +18,7 @@ describe("Graph", () => {
   });
 
   it("should work with multiple EMAs using .depends() API", () => {
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
 
     g.add("fast", new EMA({ period: 2 }))
       .depends("tick")
@@ -35,7 +35,7 @@ describe("Graph", () => {
   });
 
   it("should handle property access like tick.price", () => {
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
 
     g.add("ema", new EMA({ period: 2 })).depends("tick.price");
 
@@ -52,7 +52,7 @@ describe("Graph", () => {
       update: (a: number, b: number) => a + b,
     };
 
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
 
     g.add("ema1", new EMA({ period: 2 }))
       .depends("tick")
@@ -72,7 +72,7 @@ describe("Graph", () => {
       update: (a: number, b: number) => a + b,
     };
 
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
 
     g.add("sum", sumNode)
       .depends("ema1", "ema2")
@@ -91,7 +91,7 @@ describe("Graph", () => {
   });
 
   it("should handle complex dependency graph with arbitrary order", () => {
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
 
     g.add("final", { update: (a: number, b: number) => a * b })
       .depends("diff", "fast")
@@ -131,7 +131,7 @@ describe("Graph", () => {
       update: (arr: number[]) => arr.reduce((sum, v) => sum + v, 0),
     };
 
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
 
     g.add("batch", new BatchAggregator())
       .depends("tick")
@@ -157,7 +157,7 @@ describe("Graph", () => {
   });
 
   it("should throw error when adding node with root name", () => {
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
 
     expect(() => {
       g.add("tick", new EMA({ period: 2 })).depends("tick");
@@ -165,7 +165,7 @@ describe("Graph", () => {
   });
 
   it("should validate acyclic graph without errors", () => {
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
 
     g.add("ema1", new EMA({ period: 2 }))
       .depends("tick")
@@ -180,7 +180,7 @@ describe("Graph", () => {
   });
 
   it("should detect simple cycle", () => {
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
     const identity = { update: (x: number) => x };
 
     g.add("a", identity).depends("b").add("b", identity).depends("a");
@@ -196,7 +196,7 @@ describe("Graph", () => {
   });
 
   it("should detect cycle in longer chain", () => {
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
     const identity = { update: (x: number) => x };
 
     g.add("a", identity)
@@ -212,7 +212,7 @@ describe("Graph", () => {
     expect(result.valid).toBe(true);
     expect(result.errors).toEqual([]);
 
-    const g2 = new Graph("tick");
+    const g2 = new GraphExec("tick");
     g2.add("a", { update: (x: number) => x })
       .depends("tick")
       .add("b", { update: (x: number) => x })
@@ -227,7 +227,7 @@ describe("Graph", () => {
     const result2 = g2.validate();
     expect(result2.valid).toBe(true);
 
-    const g3 = new Graph("tick");
+    const g3 = new GraphExec("tick");
     g3.add("a", { update: (x: number) => x })
       .depends("b")
       .add("b", { update: (x: number) => x })
@@ -245,7 +245,7 @@ describe("Graph", () => {
   });
 
   it("should detect node with unknown dependency", () => {
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
     const identity = { update: (x: number) => x };
 
     g.add("a", identity)
@@ -270,7 +270,7 @@ describe("Graph", () => {
   });
 
   it("should detect two independent cycles", () => {
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
     const identity = { update: (x: number) => x };
 
     // First cycle: a -> b -> c -> a
@@ -318,7 +318,7 @@ describe("Graph", () => {
   });
 
   it("should detect both cycles separately", () => {
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
     const identity = { update: (x: number) => x };
 
     // First cycle: a -> b -> c -> a
@@ -375,7 +375,7 @@ describe("Graph", () => {
   });
 
   it("should prevent duplicate node names", () => {
-    const g = new Graph("tick");
+    const g = new GraphExec("tick");
     const identity = { update: (x: number) => x };
 
     g.add("a", identity).depends("tick");

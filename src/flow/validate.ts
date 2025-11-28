@@ -1,85 +1,117 @@
-export type TopoError =
-  | { type: "cycle"; nodes: string[] }
-  | { type: "unreachable"; nodes: string[] };
+import type { OpRegistry } from "./Registry.js";
+import {
+  FlowGraphSchema,
+  type FlowGraph,
+  type FlowGraphError,
+  type FlowGraphValidationResult,
+} from "./schema.js";
+import { validateAdjList } from "./validate-topo.js";
 
-function detectCycle(succ: Map<string, string[]>): TopoError[] {
-  const WHITE = 0;
-  const GRAY = 1;
-  const BLACK = 2;
-
-  const state = new Map<string, number>();
-  for (const node of succ.keys()) {
-    state.set(node, WHITE);
-  }
-
-  const cycles: string[][] = [];
-
-  const dfs = (node: string, path: string[]): void => {
-    state.set(node, GRAY);
-    path.push(node);
-
-    const neighbors = succ.get(node) || [];
-    for (const neighbor of neighbors) {
-      const neighborState = state.get(neighbor);
-      if (neighborState === GRAY) {
-        const cycleStart = path.indexOf(neighbor);
-        const cyclePath = path.slice(cycleStart).concat(neighbor);
-        cycles.push(cyclePath);
-      } else if (neighborState === WHITE) {
-        dfs(neighbor, path);
-      }
-    }
-
-    path.pop();
-    state.set(node, BLACK);
-  };
-
-  for (const node of succ.keys()) {
-    if (state.get(node) === WHITE) {
-      dfs(node, []);
-    }
-  }
-
-  return cycles.map((nodes) => ({ type: "cycle", nodes }));
+/**
+ * Normalize inputSrc to string array. Handles undefined, empty string, and Const nodes.
+ */
+export function normalizeUpdateSource(source?: string[] | string): string[] {
+  if (!source || source === "") return [];
+  return Array.isArray(source) ? source : [source];
 }
 
-function detectUnreachable(
-  root: string,
-  succ: Map<string, string[]>
-): TopoError[] {
-  const reachable = new Set<string>();
-  const queue = [root];
-  reachable.add(root);
+/**
+ * Build successor adjacency list from graph schema.
+ * Nodes with no inputs depend on root.
+ */
+export function buildSuccessorMap(graph: FlowGraph): Map<string, string[]> {
+  const succ = new Map<string, string[]>();
 
-  while (queue.length > 0) {
-    const node = queue.shift()!;
-    const neighbors = succ.get(node) || [];
-    for (const neighbor of neighbors) {
-      if (!reachable.has(neighbor)) {
-        reachable.add(neighbor);
-        queue.push(neighbor);
+  succ.set(graph.root, []);
+  for (const node of graph.nodes) {
+    succ.set(node.name, []);
+  }
+
+  for (const node of graph.nodes) {
+    const sources = normalizeUpdateSource(node.inputSrc);
+    if (sources.length === 0) {
+      // Nodes with no inputs (e.g., Const) depend on root
+      const rootSuccs = succ.get(graph.root)!;
+      if (!rootSuccs.includes(node.name)) {
+        rootSuccs.push(node.name);
+      }
+    } else {
+      for (const depPath of sources) {
+        const dep = depPath.split(".")[0]!;
+        const depSuccs = succ.get(dep);
+        if (depSuccs && !depSuccs.includes(node.name)) {
+          depSuccs.push(node.name);
+        }
       }
     }
   }
 
-  const unreachable: string[] = [];
-  for (const node of succ.keys()) {
-    if (!reachable.has(node)) {
-      unreachable.push(node);
+  return succ;
+}
+
+/**
+ * Validate a graph against a registry.
+ * Checks:
+ * - GraphExec structure (via Zod)
+ * - All types exist in registry
+ * - GraphExec topology (cycles, reachability)
+ * @param graph GraphExec
+ * @param registry Type registry
+ */
+export function validateFlowGraph(
+  graph: FlowGraph,
+  registry: OpRegistry
+): FlowGraphValidationResult {
+  const errors: FlowGraphError[] = [];
+
+  // Validate structure with Zod
+  const parseResult = FlowGraphSchema.safeParse(graph);
+  if (!parseResult.success) {
+    for (const issue of parseResult.error.issues) {
+      errors.push({
+        type: "structure",
+        path: issue.path.join("."),
+        message: issue.message,
+      });
+    }
+    return { valid: false, errors };
+  }
+
+  const validSchema = parseResult.data;
+
+  // Check all types exist in registry
+  for (const node of validSchema.nodes) {
+    if (!registry.has(node.type)) {
+      errors.push({
+        type: "unknown_type",
+        node: node.name,
+        opType: node.type,
+      });
     }
   }
 
-  return unreachable.length > 0
-    ? [{ type: "unreachable", nodes: unreachable }]
-    : [];
+  // Check topology (unreachable errors will catch unknown dependencies)
+  if (errors.length === 0) {
+    const succ = buildSuccessorMap(validSchema);
+    const FlowTopoErrors = validateAdjList(validSchema.root, succ);
+    errors.push(...FlowTopoErrors);
+  }
+
+  return { valid: errors.length === 0, errors };
 }
 
-export function validateAdjList(
-  root: string,
-  succ: Map<string, string[]>
-): TopoError[] {
-  const errors: TopoError[] = [];
-  errors.push(...detectCycle(succ));
-  errors.push(...detectUnreachable(root, succ));
-  return errors;
+/**
+ * Format validation error as human-readable string.
+ */
+export function formatFlowValidationError(error: FlowGraphError): string {
+  switch (error.type) {
+    case "structure":
+      return `${error.path}: ${error.message}`;
+    case "unknown_type":
+      return `Unknown type "${error.opType}" for node "${error.node}"`;
+    case "cycle":
+      return `GraphExec contains a cycle: ${error.nodes.join(" → ")}`;
+    case "unreachable":
+      return `Unreachable nodes from root: ${error.nodes.join(", ")}`;
+  }
 }
