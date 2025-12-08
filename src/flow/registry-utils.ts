@@ -1,4 +1,4 @@
-import { OpRegistry } from "./Registry.js";
+import { OpRegistry } from "./registry.js";
 
 import { Const } from "../primitive/Const.js";
 import * as arith from "../primitive/arithmetic.js";

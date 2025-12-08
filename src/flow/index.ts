@@ -1,5 +1,5 @@
-export { GraphExec } from "./GraphExec.js";
-export { OpRegistry } from "./Registry.js";
+export { GraphExec } from "./graph-exec";
+export { OpRegistry } from "./registry.js";
 export {
   FlowNodeSchema,
   type FlowNode,

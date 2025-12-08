@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GraphExec } from "../src/flow/GraphExec.js";
+import { GraphExec } from "../src/flow/graph-exec";
 import { EMA } from "../src/primitive/core-ops/rolling.js";
 
 describe("GraphExec", () => {

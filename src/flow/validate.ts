@@ -1,4 +1,4 @@
-import type { OpRegistry } from "./Registry.js";
+import type { OpRegistry } from "./registry.js";
 import {
   FlowGraphSchema,
   type FlowGraph,

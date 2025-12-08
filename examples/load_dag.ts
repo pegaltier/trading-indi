@@ -1,8 +1,8 @@
 import { readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
-import { OpRegistry } from "../src/flow/Registry.js";
-import { GraphExec } from "../src/flow/GraphExec.js";
+import { OpRegistry } from "../src/flow/registry.js";
+import { GraphExec } from "../src/flow/graph-exec";
 import {
   validateFlowGraph,
   formatFlowValidationError,

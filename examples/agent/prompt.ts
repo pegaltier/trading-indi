@@ -1,4 +1,4 @@
-import type { OpRegistry } from "../../src/flow/Registry.js";
+import type { OpRegistry } from "../../src/flow/registry.js";
 import type { FlowGraph, FlowGraphError } from "../../src/flow/schema.js";
 import { validateFlowGraph } from "../../src/flow/validate.js";
 

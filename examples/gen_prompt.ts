@@ -1,4 +1,4 @@
-import { OpRegistry } from "../src/flow/Registry.js";
+import { OpRegistry } from "../src/flow/registry.js";
 import { generateGraphSchemaPrompt } from "./agent/prompt.js";
 import { regCoreOps } from "../src/flow/RegistryUtils.js";
 

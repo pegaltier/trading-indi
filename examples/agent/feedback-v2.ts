@@ -1,11 +1,11 @@
-import type { OpRegistry } from "../../src/flow/Registry.js";
+import type { OpRegistry } from "../../src/flow/registry.js";
 import type { FlowGraph, FlowGraphDiff } from "../../src/flow/schema.js";
 import { compareFlowGraphs } from "../../src/flow/schema-utils.js";
 import {
   validateFlowGraph,
   formatFlowValidationError,
 } from "../../src/flow/validate.js";
-import { GraphExec } from "../../src/flow/GraphExec.js";
+import { GraphExec } from "../../src/flow/graph-exec";
 
 /**
  * Feedback loop using whole graph replacement.

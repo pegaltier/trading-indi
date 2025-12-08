@@ -425,8 +425,8 @@ export {
 // Flow - GraphExec & Registry
 // ============================================================================
 
-export { GraphExec } from "./flow/GraphExec.js";
-export { OpRegistry } from "./flow/Registry.js";
+export { GraphExec } from "./flow/graph-exec";
+export { OpRegistry } from "./flow/registry.js";
 export type {
   FlowNode,
   FlowGraph,

@@ -1,5 +1,5 @@
 import { bench, describe } from "vitest";
-import { GraphExec } from "../src/flow/GraphExec.js";
+import { GraphExec } from "../src/flow/graph-exec";
 import { EMA, SMA } from "@junduck/trading-core";
 
 // Trivial computation nodes
