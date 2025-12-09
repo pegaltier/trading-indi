@@ -13,6 +13,12 @@ export type { OperatorDoc } from "./types/OpDoc.js";
 export { Const } from "./primitive/Const.js";
 
 // ============================================================================
+// Primitives - Lags
+// ============================================================================
+
+export { Lag, LagTime } from "./primitive/lag.js";
+
+// ============================================================================
 // Primitives - Arithmetic Operators
 // ============================================================================
 
@@ -425,7 +431,7 @@ export {
 // Flow - GraphExec & Registry
 // ============================================================================
 
-export { GraphExec } from "./flow/graph-exec";
+export { GraphExec } from "./flow/graph-exec.js";
 export { OpRegistry } from "./flow/registry.js";
 export type {
   FlowNode,
