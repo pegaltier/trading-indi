@@ -6,8 +6,11 @@ import { EMA } from "../src/primitive/core-ops/rolling.js";
 const graph = new GraphExec("tick");
 graph.add("ema", new EMA({ period: 3 })).depends("tick");
 
-// Wrap with tracker
+// Wrap with tracker (default period: 10)
 const tracker = new GraphTracker(graph);
+
+// Or with custom period:
+// const tracker = new GraphTracker(graph, 5);
 
 console.log("=== GraphTracker Demo ===\n");
 
