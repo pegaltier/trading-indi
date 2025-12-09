@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { regCoreOps } from "../src/flow/RegistryUtils.js";
+import { regCoreOps } from "../src/flow/registry-utils.js";
 
 import {
   GraphExec,

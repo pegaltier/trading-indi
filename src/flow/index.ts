@@ -1,4 +1,5 @@
-export { GraphExec } from "./graph-exec";
+export { GraphExec } from "./graph-exec.js";
+export { GraphNodeTracker, GraphTracker } from "./graph-tracker.js";
 export { OpRegistry } from "./registry.js";
 export {
   FlowNodeSchema,

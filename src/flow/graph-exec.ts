@@ -40,6 +40,10 @@ export class GraphExec {
 
   private size = 1; // Root takes index 0
 
+  get rootName(): string {
+    return this.rootNode;
+  }
+
   /**
    * Create a new GraphExec with a root node.
    * @param rootNode Name of the root node that receives external data
